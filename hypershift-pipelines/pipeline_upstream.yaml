@@ -126,6 +126,8 @@ spec:
       value: $(params.namespace)
     - name: snapshot
       value: "$(params.snapshot)"
+    - name: imagePullSecret
+      value: "$(tasks.checkout-hub-cluster.results.imagePullSecret)"      
     runAfter:
     - ensure-acm-prereqs
     taskRef:

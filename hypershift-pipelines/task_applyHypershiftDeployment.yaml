@@ -60,7 +60,7 @@ spec:
           pullSecret:
             name: $(inputs.params.targetManagedCluster)-hd-pull-secret
           release:
-            image: quay.io/openshift-release-dev/ocp-release:4.11.0-rc.1-x86_64
+            image: quay.io/openshift-release-dev/ocp-release:4.10.17-x86_64
           services:
           - service: APIServer
             servicePublishingStrategy:

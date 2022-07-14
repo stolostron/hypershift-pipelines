@@ -12,6 +12,10 @@ spec:
     default: 2.5.0-SNAPSHOT
     description: The snapshot used to deploy MCE
     type: string
+  - name: imagePullSecret
+    default: ""
+    description: The image pull secret used to deploy the catalogsources. Copied from clusterPoolNamespace
+    type: string    
   steps:
   - args:
     - |-
@@ -20,6 +24,12 @@ spec:
 
       _LOGIN_CMD=$(cat login.sh)
       eval "$_LOGIN_CMD"
+
+      echo "Updating global pull secret to add quay.io:443"
+      psKey=$(echo $(inputs.params.imagePullSecret) | base64 -d | jq '.auths."quay.io".auth' | tr -d '"')
+      oc get secret -n openshift-config pull-secret -o yaml | yq eval '.data.".dockerconfigjson"' - | base64 -d | jq > /tmp/authfile
+      cat /tmp/authfile | jq --arg argPsKey $psKey '. * {"auths": {"quay.io:443": {auth: $argPsKey}}}' > /tmp/authfile.updated
+      oc set data secret/pull-secret -n openshift-config --from-file=.dockerconfigjson=/tmp/authfile.updated
 
       oc project $(inputs.params.namespace)
       _CHANNEL="release-$(echo $(inputs.params.snapshot) | cut -c1-3)"
