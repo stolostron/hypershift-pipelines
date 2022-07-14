@@ -71,6 +71,7 @@ spec:
 
       echo "API URL of claimed cluster: $_API_URL"
       echo "Password for the claimed cluster: $_PASSWORD"
+      echo "oc login $_API_URL -u $_USERNAME -p $_PASSWORD"
       echo ""
       echo "Clusterclaim successfully checked out"
       exit 0
