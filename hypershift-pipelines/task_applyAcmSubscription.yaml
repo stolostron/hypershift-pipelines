@@ -9,7 +9,7 @@ spec:
     description: The namespace to deploy MCE into
     type: string
   - name: snapshot
-    default: 2.5.0-SNAPSHOT
+    default: 2.6.0-SNAPSHOT
     description: The snapshot used to deploy MCE
     type: string
   - name: imagePullSecret

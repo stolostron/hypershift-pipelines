@@ -1,0 +1,85 @@
+apiVersion: tekton.dev/v1beta1
+kind: Task
+metadata:
+  name: notify-status
+spec:
+  params:
+  - name: snapshot
+    default: ""
+    description: The SNAPSHOT Tag used to deploy the catalogsources
+    type: string 
+  - name: runStatus
+    default: ""
+    description: Overall status of the pipeline run
+    type: string     
+  - name: hubOcLogin
+    default: ""
+    description: OC Login command for the Hub cluster
+    type: string 
+  - name: spokeOcLogin
+    default: ""
+    description: OC Login command for the Spoke cluster
+    type: string         
+  - name: sendNotification
+    default: "false"
+    description: Sends notification to slack if value is true
+    type: string       
+  - name: mchStatus
+    default: "false"
+    description: ACM install status
+    type: string      
+  - name: hubHdStatus
+    default: "false"
+    description: HyperShift deployment status on the hub
+    type: string  
+  - name: spokeHdStatus
+    default: "false"
+    description: HyperShift deployment status on the spoke
+    type: string          
+  - name: hubHd
+    default: "false"
+    description: HyperShift deployment output on the hub
+    type: string  
+  - name: spokeHd
+    default: "false"
+    description: HyperShift deployment output on the spoke
+    type: string       
+  steps:
+  - args:
+    - |-
+      #!/bin/bash
+      set -e
+
+      # Workaround pipeline task bug when task fails      
+      hubHdStatus="Failed"
+      if [[ "$(inputs.params.hubHdStatus)" == *"Completed"* ]]; then
+        hubHdStatus="Succeeded"
+      fi
+
+      spokeHdStatus="Failed"
+      if [[ "$(inputs.params.spokeHdStatus)" == *"Completed"* ]]; then
+        spokeHdStatus="Succeeded"
+      fi
+
+      if [[ "$(inputs.params.sendNotification)" == "true" ]]; then
+        echo "Send notification to app-lifecycle-backend-dev slack channel"
+        curl -X POST -H 'Content-type: application/json' --data "{\"text\":\"ACM build $(inputs.params.snapshot) overall status: $(inputs.params.runStatus)\n\tACM install:$(inputs.params.mchStatus)\n\tHub HD:$hubHdStatus\n\tSpoke HD:$spokeHdStatus\n\nHub HD Output:\n\t$(inputs.params.hubHd)\n\nSpoke HD Output:\n\t$(inputs.params.spokeHd)\n\nHub login:\n$(inputs.params.hubOcLogin)\n\nManaged cluster login:\n$(inputs.params.spokeOcLogin)\"}" https://hooks.slack.com/services/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
+
+        echo "Send notification to team-acm-hypershift slack channel"
+        curl -X POST -H 'Content-type: application/json' --data "{\"text\":\"ACM build $(inputs.params.snapshot) overall status: $(inputs.params.runStatus)\n\tACM install:$(inputs.params.mchStatus)\n\tHub HD:$hubHdStatus\n\tSpoke HD:$spokeHdStatus\n\nHub HD Output:\n\t$(inputs.params.hubHd)\n\nSpoke HD Output:\n\t$(inputs.params.spokeHd)\"}" https://hooks.slack.com/services/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
+
+      else
+        echo "Skip notification to slack channel"
+      fi
+
+      exit 0
+
+    command:
+    - /bin/bash
+    - -c
+    image: quay.io/zkayyali812/ocm-utils:latest
+    name: apply
+    resources: {}
+    workingDir: /workspace/source
+  workspaces:
+  - name: source

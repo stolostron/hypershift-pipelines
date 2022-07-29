@@ -8,6 +8,9 @@ spec:
     default: local-cluster
     description: The managedcluster to target to become a managementcluster
     type: string
+  results:
+  - name: hdStatus
+    description: Status of the HyperShift deployment
   steps:
   - args:
     - |-
@@ -39,43 +42,7 @@ spec:
         namespace: $(inputs.params.targetManagedCluster)
       spec:
         hostingCluster: $(inputs.params.targetManagedCluster)
-        hostingNamespace: $(inputs.params.targetManagedCluster)
-        hostedClusterSpec:
-          imageContentSources:
-          - source: registry.redhat.io/rhacm2
-            mirrors:
-            - quay.io:443/acm-d
-          - source: registry.redhat.io/multicluster-engine
-            mirrors:
-            - quay.io:443/acm-d
-          - source: registry.access.redhat.com/openshift4/ose-oauth-proxy
-            mirrors:
-            - registry.redhat.io/openshift4/ose-oauth-proxy
-          networking:
-            machineCIDR: 10.0.0.0/16
-            networkType: OpenShiftSDN
-            podCIDR: 10.132.0.0/14
-            serviceCIDR: 172.31.0.0/16
-          platform:
-            type: AWS
-          pullSecret:
-            name: $(inputs.params.targetManagedCluster)-hd-pull-secret
-          release:
-            image: quay.io/openshift-release-dev/ocp-release:4.10.17-x86_64
-          services:
-          - service: APIServer
-            servicePublishingStrategy:
-              type: LoadBalancer
-          - service: OAuthServer
-            servicePublishingStrategy:
-              type: Route
-          - service: Konnectivity
-            servicePublishingStrategy:
-              type: Route
-          - service: Ignition
-            servicePublishingStrategy:
-              type: Route
-          sshKey: {}
+        hostingNamespace: clusters
         infrastructure:
           cloudProvider:
             name: acm-credentials
@@ -85,51 +52,42 @@ spec:
               region: us-east-2"
       echo "$_TEMPLATE" | oc apply -f -
 
-      if [[ "$(inputs.params.targetManagedCluster)" == "local-cluster" ]]; then
-        _ATTEMPTS=0
-        until oc get hostedcluster $HD_NAME -n $(inputs.params.targetManagedCluster);
-        do 
-            echo "$_ATTEMPTS/10: Waiting for HostedCluster to be deployed from HyperShiftDeployment"
-            _ATTEMPTS=$((_ATTEMPTS + 1))
-            sleep 15;
-            if [[ $_ATTEMPTS == 10 ]]; then
-                echo "The hostedcluster did not come up in the allotted time"
-                exit 1
-            fi
-        done
-        
-        echo "Validating HostedCluster on hub cluster 'local-cluster' ..."
-        _ATTEMPTS=0
-        echo "Waiting for HostedCluster deployment to complete ..."
-        until oc get hostedcluster -n $(inputs.params.targetManagedCluster) $HD_NAME -o yaml | yq eval '.status.version.history.[0].state' - | grep "Completed";
-        do 
-            echo "$_ATTEMPTS/30: Waiting for HostedCluster deployment to be complete... Sleeping 1 min"
-            _ATTEMPTS=$((_ATTEMPTS + 1))
-            sleep 60;
-            if [[ $_ATTEMPTS == 30 ]]; then
-                echo "The hostedcluster not come up in the allotted time"
-                exit 1
-            fi
-        done
-        echo "HostedCluster is running on hub cluster 'local-cluster'"
-      fi
+      echo "Waiting for HyperShift deployment to complete ..."
+      _ATTEMPTS=0
+      until oc get hypershiftdeployment -n $(inputs.params.targetManagedCluster) $HD_NAME -o json | jq '(.status.conditions | map(select(.type == "HostedClusterProgress")))[0].reason' | grep "Completed";
+      do 
+          echo "$_ATTEMPTS/20: Waiting for HyperShift deployment to be complete... Sleeping 1 min"
+          _ATTEMPTS=$((_ATTEMPTS + 1))
+          sleep 60;
+          if [[ $_ATTEMPTS == 20 ]]; then
+              echo "The HyperShiftDeployment did not come up in the allotted time"
+              oc get hypershiftdeployment -n $(inputs.params.targetManagedCluster) $HD_NAME -o yaml 
+
+              oc get hd -n $(inputs.params.targetManagedCluster) $HD_NAME  > $(results.hdStatus.path)               
+              exit 0
+          fi
+      done
+      echo "HyperShiftDeployment is running on $(inputs.params.targetManagedCluster)"
+      oc get hd -n $(inputs.params.targetManagedCluster) $HD_NAME -o yaml
 
       echo "Validating HostedCluster created ManagedCluster on hub cluster ..."
-        _ATTEMPTS=0
-        echo "Waiting for ManagedCluster to be created ..."
-        until oc get managedcluster | grep "$HD_NAME";
-        do 
-            echo "$_ATTEMPTS/10: Waiting for HostedCluster ManagedCluster to be available... Sleeping 1 min"
-            _ATTEMPTS=$((_ATTEMPTS + 1))
-            sleep 60;
-            if [[ $_ATTEMPTS == 10 ]]; then
-                echo "The managedcluster not come up in the allotted time"
-                exit 1
-            fi
-        done
-        echo "ManagedCluster is running on hub cluster"
+      _ATTEMPTS=0
+      echo "Waiting for ManagedCluster to be created ..."
+      until oc get managedcluster | grep "$HD_NAME";
+      do 
+          echo "$_ATTEMPTS/10: Waiting for HostedCluster ManagedCluster to be available... Sleeping 1 min"
+          _ATTEMPTS=$((_ATTEMPTS + 1))
+          sleep 60;
+          if [[ $_ATTEMPTS == 10 ]]; then
+              echo "The managedcluster not come up in the allotted time"
+              oc get hd -n $(inputs.params.targetManagedCluster) $HD_NAME -o yaml
+              exit 1
+          fi
+      done
+      echo "ManagedCluster is running on hub cluster"
 
       echo "HyperShiftDeployment deployed successfully"
+      oc get hd -n $(inputs.params.targetManagedCluster) $HD_NAME  > $(results.hdStatus.path)
       exit 0
     command:
     - /bin/bash

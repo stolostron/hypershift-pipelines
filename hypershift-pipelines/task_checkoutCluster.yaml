@@ -23,6 +23,8 @@ spec:
     description: Password for the claimed cluster.  
   - name: api
     description: API URL of the claimed cluster.
+  - name: ocLogin
+    description: OC Login command to login to the cluster    
   - name: imagePullSecret
     description: The imagePullSecret on the hub cluster.
   steps:
@@ -31,6 +33,10 @@ spec:
       #!/bin/bash
       set -e
       
+      # Delete cluster claim if it exists
+      echo "Deleting hub clusterclaim: $(inputs.params.clusterClaimName)"
+      oc delete clusterclaim.hive  $(inputs.params.clusterClaimName) || true
+
       _TEMPLATE="apiVersion: hive.openshift.io/v1
       kind: ClusterClaim
       metadata:
@@ -63,15 +69,17 @@ spec:
       oc get secret -n ${NAMESPACE} ${KUBECONFIG_SECRET} -o yaml | yq eval '.data.kubeconfig' - | base64 -d > $(inputs.params.clusterClaimName)-kubeconfig.yaml
       
       _IMAGE_PULL_SECRET=$(oc get secret hypershift-pipelines-multiclusterhub-operator-pull-secret -o yaml | yq eval '.data.".dockerconfigjson"' -)
+      _OCLOGIN="oc login $_API_URL -u $_USERNAME -p $_PASSWORD"
 
       echo "$_USERNAME" | tr -d '\n' > $(results.username.path)
       echo "$_PASSWORD" | tr -d '\n' > $(results.password.path)
       echo "$_API_URL" | tr -d '\n' > $(results.api.path)
       echo "$_IMAGE_PULL_SECRET" | tr -d '\n' > $(results.imagePullSecret.path)
+      echo "$_OCLOGIN" > $(results.ocLogin.path)
 
       echo "API URL of claimed cluster: $_API_URL"
       echo "Password for the claimed cluster: $_PASSWORD"
-      echo "oc login $_API_URL -u $_USERNAME -p $_PASSWORD"
+      echo "$_OCLOGIN"
       echo ""
       echo "Clusterclaim successfully checked out"
       exit 0

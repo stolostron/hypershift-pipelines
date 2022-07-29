@@ -24,6 +24,10 @@ spec:
     type: string
     description: The upstream SNAPSHOT to used to deploy ACM
     default: "2.0-latest"
+  - name: sendNotification
+    type: string
+    description: Sends notification to slack if value is true
+    default: "false"    
   tasks:
   - name: fetch-repo-samples
     params:
@@ -49,6 +53,8 @@ spec:
       value: $(params.clusterPoolName)
     - name: clusterClaimLifetime
       value: $(params.clusterClaimLifetime)
+    - name: snapshot
+      value: "$(params.snapshot)"      
     taskRef:
       kind: Task
       name: deploy-acm-hyper-param-validation
@@ -188,3 +194,43 @@ spec:
       workspace: shared-workspace
   workspaces:
   - name: shared-workspace
+  finally:
+  - name: notify-status
+    params:
+    - name: sendNotification
+      value: "$(params.sendNotification)"
+    - name: snapshot
+      value: "$(params.snapshot)"
+    - name: runStatus
+      value: "$(tasks.status)"  
+    - name: hubOcLogin
+      value: "$(tasks.checkout-hub-cluster.results.ocLogin)"  
+    - name: spokeOcLogin
+      value: "$(tasks.checkout-spoke-cluster.results.ocLogin)"      
+    - name: mchStatus
+      value: "$(tasks.ensure-mch.status)"        
+    - name: hubHdStatus
+      value: "$(tasks.ensure-hypershiftdeployment-hub.status)"              
+    - name: spokeHdStatus
+      value: "$(tasks.ensure-hypershiftdeployment-spoke.status)" 
+    - name: hubHd
+      value: "$(tasks.ensure-hypershiftdeployment-hub.results.hdStatus)"              
+    - name: spokeHd
+      value: "$(tasks.ensure-hypershiftdeployment-spoke.results.hdStatus)"                  
+    taskRef:
+      kind: Task
+      name: notify-status
+    workspaces:
+    - name: source
+      workspace: shared-workspace   
+  - name: cleanup-acm-hypershift-deployments
+    params:
+    - name: clusterClaimName
+      value: $(params.clusterClaimName)
+    taskRef:
+      kind: Task
+      name: cleanup-acm-hypershift-deployments
+    workspaces:
+    - name: source
+      workspace: shared-workspace  
+     

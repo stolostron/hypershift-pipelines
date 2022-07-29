@@ -12,6 +12,10 @@ spec:
     default: ""
     description: The length of the lifetime of the clusterclaim
     type: string
+  - name: snapshot
+    default: ""
+    description: The SNAPSHOT Tag used to deploy the catalogsources
+    type: string    
   steps:
   - args:
     - |-
@@ -41,6 +45,15 @@ spec:
         exit 1
       fi
       
+      _SNAPSHOT="$(inputs.params.snapshot)"
+      if [[ $_SNAPSHOT == *-SNAPSHOT-* ]] || [[ $_SNAPSHOT == *-DOWNSTREAM-* ]] ;
+      then
+        echo "Valid image parameter: $_SNAPSHOT"
+      else
+        echo "Not a valid image: $_SNAPSHOT"
+        exit 1
+      fi
+
       echo "Params are valid"
     command:
     - /bin/bash
