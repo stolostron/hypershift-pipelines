@@ -12,13 +12,13 @@ spec:
       name: hypershift-preview
     - enabled: true
       name: multiclusterhub-repo
-    - enabled: false
+    - enabled: true
       name: search
-    - enabled: false
+    - enabled: true
       name: management-ingress
     - enabled: true
       name: console
-    - enabled: false
+    - enabled: true
       name: insights
     - enabled: true
       name: grc
@@ -38,5 +38,5 @@ spec:
       name: discovery
     - enabled: false
       name: hive
-    - enabled: true
+    - enabled: false
       name: console-mce
