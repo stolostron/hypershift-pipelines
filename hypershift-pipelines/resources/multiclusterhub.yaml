@@ -16,7 +16,7 @@ spec:
       name: search
     - enabled: false
       name: management-ingress
-    - enabled: false
+    - enabled: true
       name: console
     - enabled: false
       name: insights
@@ -38,5 +38,5 @@ spec:
       name: discovery
     - enabled: false
       name: hive
-    - enabled: false
+    - enabled: true
       name: console-mce
