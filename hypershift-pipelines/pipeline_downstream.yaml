@@ -94,22 +94,6 @@ spec:
     workspaces:
     - name: source
       workspace: shared-workspace
-  - name: checkout-spoke-cluster
-    params:
-    - name: clusterClaimName
-      value: $(params.clusterClaimName)-spoke
-    - name: clusterPoolName
-      value: $(params.clusterPoolName)
-    - name: clusterClaimLifetime
-      value: $(params.clusterClaimLifetime)
-    runAfter:
-    - login-to-hub-cluster
-    taskRef:
-      kind: Task
-      name: deploy-acm-hyper-checkout-cluster
-    workspaces:
-    - name: source
-      workspace: shared-workspace
   - name: ensure-acm-prereqs
     params:
     - name: namespace
@@ -154,38 +138,12 @@ spec:
     workspaces:
     - name: source
       workspace: shared-workspace
-  - name: import-spoke-cluster
-    params:
-    - name: clusterClaimName
-      value: $(params.clusterClaimName)-spoke
-    runAfter:
-    - ensure-mch
-    - checkout-spoke-cluster
-    taskRef:
-      kind: Task
-      name: deploy-acm-hyper-import-spoke
-    workspaces:
-    - name: source
-      workspace: shared-workspace
   - name: ensure-hypershiftdeployment-hub
     params:
     - name: targetManagedCluster
       value: local-cluster
     runAfter:
     - ensure-mch
-    - import-spoke-cluster
-    taskRef:
-      kind: Task
-      name: deploy-acm-hyper-apply-hyper-deployment
-    workspaces:
-    - name: source
-      workspace: shared-workspace
-  - name: ensure-hypershiftdeployment-spoke
-    params:
-    - name: targetManagedCluster
-      value: $(params.clusterClaimName)-spoke
-    runAfter:
-    - import-spoke-cluster
     taskRef:
       kind: Task
       name: deploy-acm-hyper-apply-hyper-deployment
@@ -195,7 +153,7 @@ spec:
   workspaces:
   - name: shared-workspace
   finally:
-  - name: notify-status
+  - name: notify-status-ds
     params:
     - name: sendNotification
       value: "$(params.sendNotification)"    
@@ -205,18 +163,12 @@ spec:
       value: "$(tasks.status)"  
     - name: hubOcLogin
       value: "$(tasks.checkout-hub-cluster.results.ocLogin)"  
-    - name: spokeOcLogin
-      value: "$(tasks.checkout-spoke-cluster.results.ocLogin)"              
     - name: mchStatus
       value: "$(tasks.ensure-mch.status)"        
     - name: hubHdStatus
       value: "$(tasks.ensure-hypershiftdeployment-hub.status)"              
-    - name: spokeHdStatus
-      value: "$(tasks.ensure-hypershiftdeployment-spoke.status)" 
     - name: hubHd
       value: "$(tasks.ensure-hypershiftdeployment-hub.results.hdStatus)"              
-    - name: spokeHd
-      value: "$(tasks.ensure-hypershiftdeployment-spoke.results.hdStatus)"              
     taskRef:
       kind: Task
       name: notify-status
