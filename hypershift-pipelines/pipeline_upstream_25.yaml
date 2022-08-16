@@ -209,10 +209,6 @@ spec:
       value: "$(tasks.checkout-spoke-cluster.results.ocLogin)"      
     - name: mchStatus
       value: "$(tasks.ensure-mch.status)"        
-    - name: hubHdStatus
-      value: "$(tasks.ensure-hypershiftdeployment-hub.status)"              
-    - name: spokeHdStatus
-      value: "$(tasks.ensure-hypershiftdeployment-spoke.status)" 
     - name: hubHd
       value: "$(tasks.ensure-hypershiftdeployment-hub.results.hdStatus)"              
     - name: spokeHd

@@ -165,8 +165,6 @@ spec:
       value: "$(tasks.checkout-hub-cluster.results.ocLogin)"  
     - name: mchStatus
       value: "$(tasks.ensure-mch.status)"        
-    - name: hubHdStatus
-      value: "$(tasks.ensure-hypershiftdeployment-hub.status)"              
     - name: hubHd
       value: "$(tasks.ensure-hypershiftdeployment-hub.results.hdStatus)"              
     taskRef:

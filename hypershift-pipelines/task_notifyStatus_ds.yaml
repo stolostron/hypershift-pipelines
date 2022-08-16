@@ -1,7 +1,7 @@
 apiVersion: tekton.dev/v1beta1
 kind: Task
 metadata:
-  name: notify-status
+  name: notify-status-ds
 spec:
   params:
   - name: snapshot
@@ -32,10 +32,6 @@ spec:
     default: "false"
     description: HyperShift deployment output on the hub
     type: string  
-  - name: spokeHd
-    default: "false"
-    description: HyperShift deployment output on the spoke
-    type: string       
   steps:
   - args:
     - |-
@@ -48,22 +44,17 @@ spec:
         hubHdStatus="Succeeded"
       fi
 
-      spokeHdStatus="Failed"
-      if [[ "$(inputs.params.spokeHd)" == *"Completed"* ]]; then
-        spokeHdStatus="Succeeded"
-      fi
-
       overallStatus="$(inputs.params.runStatus)"
-      if [[ $hubHdStatus == "Failed" ]] || [[ $spokeHdStatus == "Failed" ]]; then
+      if [[ $hubHdStatus == "Failed" ]]; then
         overallStatus="Failed"
       fi
 
       if [[ "$(inputs.params.sendNotification)" == "true" ]]; then
         echo "Send notification to app-lifecycle-backend-dev slack channel"
-        curl -X POST -H 'Content-type: application/json' --data "{\"text\":\"ACM build $(inputs.params.snapshot) overall status: $overallStatus\n\tACM install:$(inputs.params.mchStatus)\n\tHub HD:$hubHdStatus\n\tSpoke HD:$spokeHdStatus\n\nHub HD Output:\n\t$(inputs.params.hubHd)\n\nSpoke HD Output:\n\t$(inputs.params.spokeHd)\n\nHub login:\n$(inputs.params.hubOcLogin)\n\nManaged cluster login:\n$(inputs.params.spokeOcLogin)\"}" https://hooks.slack.com/services/
+        curl -X POST -H 'Content-type: application/json' --data "{\"text\":\"ACM build $(inputs.params.snapshot) overall status: $overallStatus\n\tACM install:$(inputs.params.mchStatus)\n\tHub HD:$hubHdStatus\n\nHub HD Output:\n\t$(inputs.params.hubHd)\n\nHub login:\n$(inputs.params.hubOcLogin)\"}" https://hooks.slack.com/services/T027F3GAJ/
 
         echo "Send notification to team-acm-hypershift slack channel"
-        curl -X POST -H 'Content-type: application/json' --data "{\"text\":\"ACM build $(inputs.params.snapshot) overall status: $overallStatus\n\tACM install:$(inputs.params.mchStatus)\n\tHub HD:$hubHdStatus\n\tSpoke HD:$spokeHdStatus\n\nHub HD Output:\n\t$(inputs.params.hubHd)\n\nSpoke HD Output:\n\t$(inputs.params.spokeHd)\"}" https://hooks.slack.com/services/
+        curl -X POST -H 'Content-type: application/json' --data "{\"text\":\"ACM build $(inputs.params.snapshot) overall status: $overallStatus\n\tACM install:$(inputs.params.mchStatus)\n\tHub HD:$hubHdStatus\n\nHub HD Output:\n\t$(inputs.params.hubHd)\"}" https://hooks.slack.com/services/
 
       else
         echo "Skip notification to slack channel"
