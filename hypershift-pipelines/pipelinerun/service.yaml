@@ -1,0 +1,36 @@
+apiVersion: v1
+kind: Service
+metadata:
+  annotations:
+    kubectl.kubernetes.io/last-applied-configuration: |
+      {"apiVersion":"triggers.tekton.dev/v1alpha1","kind":"EventListener","metadata":{"annotations":{},"name":"hs-ci-github-listener","namespace":"hypershift-devel"},"spec":{"serviceAccountName":"pipeline","triggers":[{"bindings":[{"ref":"hs-ci-pipeline-binding"}],"template":{"ref":"hs-ci-trigger-pipeline-template"}}]}}
+  creationTimestamp: "2022-07-18T19:32:43Z"
+  labels:
+    app.kubernetes.io/managed-by: EventListener
+    app.kubernetes.io/part-of: Triggers
+    eventlistener: hs-ci-github-listener
+  name: el-hs-ci-github-listener
+  namespace: hypershift-devel
+spec:
+  clusterIP: 172.30.189.203
+  clusterIPs:
+  - 172.30.189.203
+  internalTrafficPolicy: Cluster
+  ipFamilies:
+  - IPv4
+  ipFamilyPolicy: SingleStack
+  ports:
+  - name: http-listener
+    port: 8080
+    protocol: TCP
+    targetPort: 8080
+  - name: http-metrics
+    port: 9000
+    protocol: TCP
+    targetPort: 9000
+  selector:
+    app.kubernetes.io/managed-by: EventListener
+    app.kubernetes.io/part-of: Triggers
+    eventlistener: hs-ci-github-listener
+  sessionAffinity: None
+  type: ClusterIP

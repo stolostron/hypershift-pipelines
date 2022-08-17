@@ -1,0 +1,28 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: el-hs-ci-ds-github-listener
+  namespace: hypershift-devel
+spec:
+  clusterIP: 172.30.189.203
+  clusterIPs:
+  - 172.30.189.203
+  internalTrafficPolicy: Cluster
+  ipFamilies:
+  - IPv4
+  ipFamilyPolicy: SingleStack
+  ports:
+  - name: http-listener
+    port: 8080
+    protocol: TCP
+    targetPort: 8080
+  - name: http-metrics
+    port: 9000
+    protocol: TCP
+    targetPort: 9000
+  selector:
+    app.kubernetes.io/managed-by: EventListener
+    app.kubernetes.io/part-of: Triggers
+    eventlistener: hs-ci-ds-github-listener
+  sessionAffinity: None
+  type: ClusterIP

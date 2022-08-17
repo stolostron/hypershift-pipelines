@@ -1,0 +1,11 @@
+apiVersion: triggers.tekton.dev/v1alpha1
+kind: EventListener
+metadata:
+ name: hs-ci-ds-github-listener
+spec:
+ serviceAccountName: pipeline
+ triggers:
+   - bindings:
+       - ref: hs-ci-pipeline-binding
+     template:
+       ref: hs-ci-ds-trigger-pipeline-template
