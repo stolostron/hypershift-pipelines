@@ -169,7 +169,7 @@ spec:
       value: "$(tasks.ensure-hypershiftdeployment-hub.results.hdStatus)"              
     taskRef:
       kind: Task
-      name: notify-status
+      name: notify-status-ds
     workspaces:
     - name: source
       workspace: shared-workspace     
