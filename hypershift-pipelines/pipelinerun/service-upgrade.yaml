@@ -1,11 +1,7 @@
 apiVersion: v1
 kind: Service
 metadata:
-  labels:
-    app.kubernetes.io/managed-by: EventListener
-    app.kubernetes.io/part-of: Triggers
-    eventlistener: hs-ci-github-listener
-  name: el-hs-ci-github-listener
+  name: el-hs-ci-ds-upgrade-github-listener
   namespace: hypershift-devel
 spec:
   internalTrafficPolicy: Cluster
@@ -24,6 +20,6 @@ spec:
   selector:
     app.kubernetes.io/managed-by: EventListener
     app.kubernetes.io/part-of: Triggers
-    eventlistener: hs-ci-github-listener
+    eventlistener: hs-ci-ds-upgrade-github-listener
   sessionAffinity: None
   type: ClusterIP

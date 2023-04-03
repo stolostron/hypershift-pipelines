@@ -4,9 +4,6 @@ metadata:
   name: el-hs-ci-ds-github-listener
   namespace: hypershift-devel
 spec:
-  clusterIP: 172.30.189.203
-  clusterIPs:
-  - 172.30.189.203
   internalTrafficPolicy: Cluster
   ipFamilies:
   - IPv4

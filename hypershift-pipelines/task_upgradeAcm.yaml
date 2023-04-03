@@ -1,0 +1,119 @@
+apiVersion: tekton.dev/v1beta1
+kind: Task
+metadata:
+  name: upgrade-acm
+spec:
+  params:
+  - name: namespace
+    default: open-cluster-management
+    description: The namespace to deploy ACM into
+    type: string
+  - name: mceNamespace
+    default: multicluster-engine
+    description: The namespace to deploy MCE
+    type: string
+  - name: targetSnapshot
+    default: 2.7.0-SNAPSHOT
+    description: The snapshot used to upgrade ACM
+    type: string
+  steps:
+  - args:
+    - |-
+      #!/bin/bash
+      set -e
+
+      _LOGIN_CMD=$(cat login.sh)
+      eval "$_LOGIN_CMD"
+      oc project $(inputs.params.namespace)
+
+      NEXT_VERSION=2.7.0
+      STARTING_CSV="advanced-cluster-management.v${NEXT_VERSION}"
+      CHANNEL_VERSION=$(echo ${NEXT_VERSION} | sed -nr "s/v{0,1}([0-9]+\.[0-9]+)\.{0,1}[0-9]*.*/\1/p")
+      NEXT_MCE_VERSION=2.2.0
+      CHANNEL_MCE_VERSION=$(echo ${NEXT_MCE_VERSION} | sed -nr "s/v{0,1}([0-9]+\.[0-9]+)\.{0,1}[0-9]*.*/\1/p")
+
+      function waitForInstallPlan() {
+          version=$1
+          for i in `seq 1 18`; do
+              oc get installplan -n multicluster-engine | grep "$version"
+              if [ $? -eq 0 ]; then
+                break
+              fi
+              echo 'waiting for installplan to show'
+              sleep 10
+          done
+      }
+
+      function waitForMCERegistryPod() {
+          for i in `seq 1 30`; do
+              oc get po -n openshift-marketplace -lolm.catalogSource=multiclusterengine-catalog -oyaml
+              oc get po -n openshift-marketplace -lolm.catalogSource=multiclusterengine-catalog -oyaml | grep "$NEXT_MCE_SNAPSHOT"
+              if [ $? -eq 0 ]; then
+                break
+              fi
+              _MCE_IMAGE_NAME="mce-custom-registry"
+              if [[ ${CUSTOM_REGISTRY_REPO} == "quay.io/stolostron" ]]; then
+                  _MCE_IMAGE_NAME="cmb-custom-registry"
+              fi
+              echo 'waiting for subscription pod to use new image'
+              oc get po -n openshift-marketplace -lolm.catalogSource=multiclusterengine-catalog -oyaml | grep "$NEXT_MCE_SNAPSHOT"
+              echo 'patch again'
+              oc patch catalogsource multiclusterengine-catalog -n openshift-marketplace --type=json -p '[{"op":"replace","path":"/spec/image","value":"quay.io/acm-d/mce-custom-registry:'$(inputs.params.targetSnapshot)'"}]'
+              oc patch subscription.operators.coreos.com multicluster-engine -n $(inputs.params.mceNamespace) --type "json" -p "[{\"op\":\"replace\",\"path\": \"/spec/channel\",\"value\":\"stable-$CHANNEL_MCE_VERSION\"}]"
+
+              sleep 20
+          done
+      }
+
+      oc patch catalogsource acm-custom-registry -n openshift-marketplace --type=json -p '[{"op":"replace","path":"/spec/image","value":"quay.io/acm-d/acm-custom-registry:'$(inputs.params.targetSnapshot)'"}]'
+
+      oc patch catalogsource multiclusterengine-catalog -n openshift-marketplace --type=json -p '[{"op":"replace","path":"/spec/image","value":"quay.io/acm-d/mce-custom-registry:'$(inputs.params.targetSnapshot)'"}]'
+
+      oc patch subscription.operators.coreos.com acm-operator-subscription -n $(inputs.params.namespace) --type "json" -p "[{\"op\":\"replace\",\"path\": \"/spec/channel\",\"value\":\"release-$CHANNEL_VERSION\"},{\"op\": \"replace\",\"path\":\"/spec/startingCSV\",\"value\":\"$STARTING_CSV\"}]"
+
+      oc patch subscription.operators.coreos.com multicluster-engine -n $(inputs.params.mceNamespace) --type "json" -p "[{\"op\":\"replace\",\"path\": \"/spec/channel\",\"value\":\"stable-$CHANNEL_MCE_VERSION\"}]"
+
+      waitForMCERegistryPod
+
+      sleep 30;
+
+      waitForInstallPlan ${NEXT_MCE_VERSION}
+
+      _ATTEMPTS=0
+      until oc get mch multiclusterhub -o jsonpath={'.status.phase'} | grep "Running";
+      do 
+          echo "Waiting for MCH to enter a Running state..."
+          _ATTEMPTS=$((_ATTEMPTS + 1))
+          sleep 15;
+          if [[ $_ATTEMPTS == 30 ]]; then
+              echo "Failed to install the MCH in allotted time"
+              exit 1
+          fi
+      done
+
+      echo "MultiClusterHub is running"
+
+      _ATTEMPTS=0
+      until oc get mce multiclusterengine -o jsonpath={'.status.phase'} | grep "Available";
+      do
+          echo "Waiting for MCE to enter a Available state..."
+          _ATTEMPTS=$((_ATTEMPTS + 1))
+          sleep 15;
+          if [[ $_ATTEMPTS == 30 ]]; then
+              echo "Failed to install the MCE in allotted time"
+              exit 1
+          fi
+      done
+
+      echo "MultiClusterEngine is running"
+
+      exit 0
+    command:
+    - /bin/bash
+    - -c
+    image: quay.io/zkayyali812/ocm-utils:latest
+    name: apply
+    resources: {}
+    workingDir: /workspace/source
+  workspaces:
+  - name: source

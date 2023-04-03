@@ -1,0 +1,45 @@
+apiVersion: tekton.dev/v1beta1
+kind: Task
+metadata:
+  name: verify-migrated-hostedcluster
+spec:
+  params:
+  - name: targetManagedCluster
+    default: local-cluster
+    description: The managedcluster to target to become a managementcluster
+    type: string
+  steps:
+  - args:
+    - |-
+      #!/bin/bash
+      set -e
+
+      _LOGIN_CMD=$(cat login.sh)
+      eval "$_LOGIN_CMD"
+
+      _ATTEMPTS=0
+      until oc get hc -n clusters $(inputs.params.targetManagedCluster)-hd  -o jsonpath='{.status.version.history[0].state}' | grep "Completed";
+      do 
+          echo "$_ATTEMPTS/20: Waiting for hosted cluster to be complete... Sleeping 1 min"
+          _ATTEMPTS=$((_ATTEMPTS + 1))
+          sleep 60;
+          if [[ $_ATTEMPTS == 20 ]]; then
+              echo "Hosted cluster did not come up in the allotted time"
+              oc get hc -n clusters $(inputs.params.targetManagedCluster)-hd  -o yaml
+
+              exit 0
+          fi
+      done
+
+      echo "Hosting cluster clusters/$(inputs.params.targetManagedCluster)-hd is running"
+
+      exit 0
+    command:
+    - /bin/bash
+    - -c
+    image: quay.io/zkayyali812/ocm-utils:latest
+    name: apply
+    resources: {}
+    workingDir: /workspace/source
+  workspaces:
+  - name: source
