@@ -18,7 +18,7 @@ spec:
       eval "$_LOGIN_CMD"
       oc project $(inputs.params.namespace)
 
-      oc apply -f samples/hypershift-pipelines/resources/multiclusterhub27.yaml
+      oc apply -f samples/hypershift-pipelines/resources/multiclusterhub_27.yaml
 
       _ATTEMPTS=0
       until oc get mch multiclusterhub -o jsonpath={'.status.phase'} | grep "Running";

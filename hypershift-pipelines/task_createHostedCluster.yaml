@@ -20,16 +20,16 @@ spec:
       eval "$_LOGIN_CMD"
 
       OCP_RELEASE_IMAGE=quay.io/openshift-release-dev/ocp-release:4.12.0-rc.6-x86_64
-      OCP_PULL_SECRET=$(oc get secret acm-credentials -n $(inputs.params.targetManagedCluster) -o yaml | yq eval '.data.pullSecret' - )
+      OCP_PULL_SECRET=$(oc get secret dhu-clc-hs-qe -n $(inputs.params.targetManagedCluster) -o yaml | yq eval '.data.pullSecret' - )
       HOSTING_CLUSTER_NAME=$(inputs.params.targetManagedCluster)
       REGION=us-east-2
-      BASE_DOMAIN=dev11.red-chesterfield.com
-      EXT_DNS_DOMAIN=hs-pipeline.dev11.red-chesterfield.com
+      BASE_DOMAIN=dev09.red-chesterfield.com
+      EXT_DNS_DOMAIN=hs-pipeline.dev09.red-chesterfield.com
       S3_BUCKET_NAME=acm-hypershift-ci-east2
       CLUSTER_NAME_PREFIX=ge-
       # The AWS creds
-      AWS_ACCESS_KEY_ID=$(oc get secret acm-credentials -n $(inputs.params.targetManagedCluster) -o yaml | yq eval '.data.aws_access_key_id' - | base64 -d)
-      AWS_SECRET_ACCESS_KEY=$(oc get secret acm-credentials -n $(inputs.params.targetManagedCluster) -o yaml | yq eval '.data.aws_secret_access_key' - | base64 -d)
+      AWS_ACCESS_KEY_ID=$(oc get secret dhu-clc-hs-qe -n $(inputs.params.targetManagedCluster) -o yaml | yq eval '.data.aws_access_key_id' - | base64 -d)
+      AWS_SECRET_ACCESS_KEY=$(oc get secret dhu-clc-hs-qe -n $(inputs.params.targetManagedCluster) -o yaml | yq eval '.data.aws_secret_access_key' - | base64 -d)
 
       echo "OCP_RELEASE_IMAGE $OCP_RELEASE_IMAGE"
       echo "OCP_PULL_SECRET $OCP_PULL_SECRET"

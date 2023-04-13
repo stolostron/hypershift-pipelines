@@ -1,17 +1,17 @@
 apiVersion: tekton.dev/v1beta1
 kind: Pipeline
 metadata:
-  name: test-deploy-downstream-acm-and-hypershift-deployment
+  name: test-deploy-downstream-acm-and-hosted-cluster
 spec:
   params:
     - name: clusterPoolName
       type: string
       description: The name of the clusterpool to use
-      default: "clusterpool-name"
+      default: "hypershift-ci"
     - name: clusterClaimName
       type: string
       description: The name of the clusterclaim to claim
-      default: "hs-ci-ds-cluster"
+      default: "hs-ci-ds-cluster-27"
     - name: clusterClaimLifetime
       type: string
       description: The length of the lifetime of the clusterclaim. Default 8h
@@ -57,7 +57,7 @@ spec:
           value: "$(params.snapshot)"
       taskRef:
         kind: Task
-        name: deploy-acm-hyper-param-validation
+        name: deploy-acm-hyper-param-validation-27
       workspaces:
         - name: source
           workspace: shared-workspace
@@ -138,7 +138,7 @@ spec:
       workspaces:
         - name: source
           workspace: shared-workspace
-    - name: ensure-hypershiftdeployment-hub
+    - name: create-hosted-cluster
       params:
         - name: targetManagedCluster
           value: local-cluster
@@ -173,13 +173,23 @@ spec:
       workspaces:
         - name: source
           workspace: shared-workspace
-    - name: cleanup-acm-hypershift-deployments
-      params:
-        - name: clusterClaimName
-          value: $(params.clusterClaimName)
-      taskRef:
-        kind: Task
-        name: cleanup-acm-hypershift-deployments
-      workspaces:
-        - name: source
-          workspace: shared-workspace
+    # - name: cleanup-acm-hosted-clusters
+    #   params:
+    #     - name: clusterClaimName
+    #       value: $(params.clusterClaimName)
+    #   taskRef:
+    #     kind: Task
+    #     name: cleanup-acm-hosted-clusters
+    #   workspaces:
+    #     - name: source
+    #       workspace: shared-workspace
+    # - name: cleanup-clusters
+    #   params:
+    #     - name: clusterClaimName
+    #       value: $(params.clusterClaimName)
+    #   taskRef:
+    #     kind: Task
+    #     name: cleanup-acm-hypershift-clusters
+    #   workspaces:
+    #     - name: source
+    #       workspace: shared-workspace

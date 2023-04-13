@@ -35,7 +35,7 @@ spec:
       _CHANNEL="release-$(echo $(inputs.params.snapshot) | cut -c1-3)"
 
       existingCSV=$(oc get sub acm-operator-subscription -o yaml | yq eval '.status.currentCSV' -)
-      if [[ "$existingCSV" != "" ]]; then
+      if [[ "$existingCSV" != "null" ]]; then
           echo "Existing ACM install exists"
           echo $existingCSV
           oc delete sub acm-operator-subscription || true
@@ -64,7 +64,7 @@ spec:
       do 
           echo "Waiting for CSV..."
           _ATTEMPTS=$((_ATTEMPTS + 1))
-          sleep 5;
+          sleep 10;
           if [[ $_ATTEMPTS == 5 ]]; then
               echo "Failed to find the CSV in allotted time"
               exit 1
