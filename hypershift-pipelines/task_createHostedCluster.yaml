@@ -19,13 +19,13 @@ spec:
           _LOGIN_CMD=$(cat login.sh)
           eval "$_LOGIN_CMD"
 
-          OCP_RELEASE_IMAGE=quay.io/openshift-release-dev/ocp-release:4.12.0-rc.6-x86_64
-          OCP_PULL_SECRET=$(cat awsCreds.yaml | yq eval '.stringData.pullSecret' - )
+          OCP_RELEASE_IMAGE=quay.io/openshift-release-dev/ocp-release:4.12.6-x86_64
+          OCP_PULL_SECRET=$(cat awsCreds.yaml | yq eval '.data.pullSecret' - )
           HOSTING_CLUSTER_NAME=$(inputs.params.targetManagedCluster)
-          REGION=us-east-2
+          REGION=us-east-1
           BASE_DOMAIN=dev09.red-chesterfield.com
           EXT_DNS_DOMAIN=hs-pipeline.dev09.red-chesterfield.com
-          S3_BUCKET_NAME=acm-hypershift-ci-pool-east2
+          S3_BUCKET_NAME=acm-hypershift-ci-qe-bucket
           CLUSTER_NAME_PREFIX=ge-
           # The AWS creds
           AWS_ACCESS_KEY_ID=$(cat awsCreds.yaml | yq eval '.data.aws_access_key_id' - | base64 -d)
@@ -71,6 +71,8 @@ spec:
           KUBECTL_COMMAND="oc"
           # This value can be a different file path pinting to the hypershift CLI binary like "/my/dir/hypershift"
           HYPERSHIFT_COMMAND="hypershift"
+          
+          oc create secret generic hypershift-operator-oidc-provider-s3-credentials --from-file=credentials=${AWS_CREDS_FILE} --from-literal=bucket=${S3_BUCKET_NAME} --from-literal=region=${REGION} -n local-cluster
 
           # Generate the first hosted cluster name
           CLUSTER_NAME_1=${CLUSTER_NAME_PREFIX}$(cat /dev/urandom | env LC_ALL=C tr -dc 'a-z0-9' | fold -w 6 | head -n 1)
@@ -215,8 +217,7 @@ spec:
                           exit 1
                       fi
                   done
-
-
+                  
               # Apply the managedcluster and manifestworks to get the hosted cluster created in the remote hosting cluster
               ${KUBECTL_COMMAND} apply -f ${vars[CLUSTER_NAME]}-managedcluster.yaml
               if [ $? -ne 0 ]; then
