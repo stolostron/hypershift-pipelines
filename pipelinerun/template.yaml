@@ -1,0 +1,35 @@
+apiVersion: triggers.tekton.dev/v1alpha1
+kind: TriggerTemplate
+metadata:
+  name: hs-ci-trigger-pipeline-template
+spec:
+  params:
+    - name: acmbuild
+      description: ACM build
+  resourcetemplates:
+    - apiVersion: tekton.dev/v1beta1
+      kind: PipelineRun
+      metadata:
+        generateName: hs-ci-daily-build
+      spec:
+        serviceAccountName: pipeline
+        pipelineRef:
+          name: deploy-upstream-acm-and-hypershift-deployment-ds
+        params:
+          - name: clusterPoolName
+            value: hypershift-ci-clusterpool-west2
+          - name: clusterClaimName
+            value: hs-ci-us-cluster
+          - name: clusterClaimLifetime
+            value: 11h
+          - name: namespace
+            value: open-cluster-management
+          - name: snapshot
+            value: $(tt.params.acmbuild)
+          - name: sendNotification
+            value: "true"
+        timeout: 1h30m0s
+        workspaces:
+          - name: shared-workspace
+            persistentVolumeClaim:
+              claimName: hs-ws-claim
