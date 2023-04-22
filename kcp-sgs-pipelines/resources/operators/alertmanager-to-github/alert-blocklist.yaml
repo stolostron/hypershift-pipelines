@@ -1,5 +1,0 @@
-alert-blocklist:
-- Watchdog
-- UpdateAvailable
-- ViolatedPolicyReport
-- AlertmanagerReceiversNotConfigured
