@@ -22,10 +22,10 @@ spec:
           OCP_RELEASE_IMAGE=quay.io/openshift-release-dev/ocp-release:4.12.6-x86_64
           OCP_PULL_SECRET=$(cat awsCreds.yaml | yq eval '.data.pullSecret' - )
           HOSTING_CLUSTER_NAME=$(inputs.params.targetManagedCluster)
-          REGION=us-east-1
-          BASE_DOMAIN=dev09.red-chesterfield.com
-          EXT_DNS_DOMAIN=hs-pipeline.dev09.red-chesterfield.com
-          S3_BUCKET_NAME=acm-hypershift-ci-qe-bucket
+          REGION=us-west-1
+          BASE_DOMAIN=dev11.red-chesterfield.com
+          EXT_DNS_DOMAIN=hs-pipeline.dev11.red-chesterfield.com
+          S3_BUCKET_NAME=hypershift-ci-bucket
           CLUSTER_NAME_PREFIX=ge-
           # The AWS creds
           AWS_ACCESS_KEY_ID=$(cat awsCreds.yaml | yq eval '.data.aws_access_key_id' - | base64 -d)
@@ -54,39 +54,21 @@ spec:
 
           echo "Aws Credentials file"
 
-          # Create ssh keys
-          #ssh-keygen -t rsa -b 4096 -f ssh-privatekey -q -N ""
-          #if [ $? -ne 0 ]; then
-          #  echo "failed to generate ssh keys"
-          #  exit 1
-          #fi
-
-          PRIVATE_KEY=$(tail -n +2 ssh-privatekey | head -n -1 | tr -d '\n' | base64 -w 0)
-          PUBLIC_KEY=$(cat ssh-privatekey.pub | base64 -w 0)
-          echo "PRIVATE_KEY $PRIVATE_KEY"
-          echo "PUBLIC_KEY $PUBLIC_KEY"
-
           # CLI variables
           # This value can be like "kubectl --kubeconfig my/hub/kubeconfig"
           KUBECTL_COMMAND="oc"
           # This value can be a different file path pinting to the hypershift CLI binary like "/my/dir/hypershift"
           HYPERSHIFT_COMMAND="hypershift"
           
-          oc create secret generic hypershift-operator-oidc-provider-s3-credentials --from-file=credentials=${AWS_CREDS_FILE} --from-literal=bucket=${S3_BUCKET_NAME} --from-literal=region=${REGION} -n local-cluster
-
-          # Generate the first hosted cluster name
+          oc create secret generic hypershift-operator-oidc-provider-s3-credentials --from-file=credentials=${AWS_CREDS_FILE} --from-literal=bucket=${S3_BUCKET_NAME} --from-literal=region=us-east-1 -n local-cluster
+          
+          # Generate the hosted cluster name
           CLUSTER_NAME_1=${CLUSTER_NAME_PREFIX}$(cat /dev/urandom | env LC_ALL=C tr -dc 'a-z0-9' | fold -w 6 | head -n 1)
           INFRA_ID_1=$(cat /dev/urandom | env LC_ALL=C tr -dc 'a-z0-9' | fold -w 32 | head -n 1)
           CLUSTER_UUID_1=$(uuidgen)
           INFRA_OUTPUT_FILE_1=${CLUSTER_NAME_1}-infraout
           IAM_OUTPUT_FILE_1=${CLUSTER_NAME_1}-iam
 
-          # Generate the second hosted cluster name
-          CLUSTER_NAME_2=${CLUSTER_NAME_PREFIX}$(cat /dev/urandom | env LC_ALL=C tr -dc 'a-z0-9' | fold -w 6 | head -n 1)
-          INFRA_ID_2=$(cat /dev/urandom | env LC_ALL=C tr -dc 'a-z0-9' | fold -w 32 | head -n 1)
-          CLUSTER_UUID_2=$(uuidgen)
-          INFRA_OUTPUT_FILE_2=${CLUSTER_NAME_2}-infraout
-          IAM_OUTPUT_FILE_2=${CLUSTER_NAME_2}-iam
 
           createHostedCluster() {
               clusterName=$1
@@ -134,10 +116,10 @@ spec:
               vars[LOCAL_ZONE_ID]=$(cat ${infraOutfile} | jq '.localZoneID' | tr -d '"')
 
               echo "$(date) ==== Creating AWS IAM ===="
-              echo "$(date) ${HYPERSHIFT_COMMAND} create iam aws --aws-creds ${AWS_CREDS_FILE} --infra-id ${vars[INFRA_ID]} --local-zone-id ${vars[LOCAL_ZONE_ID]} --private-zone-id ${vars[PRIVATE_ZONE_ID]} --public-zone-id ${vars[PUBLIC_ZONE_ID]} --oidc-storage-provider-s3-bucket-name ${S3_BUCKET_NAME} --oidc-storage-provider-s3-region ${REGION} --output-file ${iamOutfile}"
+              echo "$(date) ${HYPERSHIFT_COMMAND} create iam aws --aws-creds ${AWS_CREDS_FILE} --infra-id ${vars[INFRA_ID]} --local-zone-id ${vars[LOCAL_ZONE_ID]} --private-zone-id ${vars[PRIVATE_ZONE_ID]} --public-zone-id ${vars[PUBLIC_ZONE_ID]} --oidc-storage-provider-s3-bucket-name ${S3_BUCKET_NAME} --oidc-storage-provider-s3-region us-east-1 --output-file ${iamOutfile}"
 
               # Create AWS IAM
-              ${HYPERSHIFT_COMMAND} create iam aws --aws-creds ${AWS_CREDS_FILE} --infra-id ${vars[INFRA_ID]} --local-zone-id ${vars[LOCAL_ZONE_ID]} --private-zone-id ${vars[PRIVATE_ZONE_ID]} --public-zone-id ${vars[PUBLIC_ZONE_ID]} --oidc-storage-provider-s3-bucket-name ${S3_BUCKET_NAME} --oidc-storage-provider-s3-region ${REGION} --output-file ${iamOutfile}
+              ${HYPERSHIFT_COMMAND} create iam aws --aws-creds ${AWS_CREDS_FILE} --infra-id ${vars[INFRA_ID]} --local-zone-id ${vars[LOCAL_ZONE_ID]} --private-zone-id ${vars[PRIVATE_ZONE_ID]} --public-zone-id ${vars[PUBLIC_ZONE_ID]} --oidc-storage-provider-s3-bucket-name ${S3_BUCKET_NAME} --oidc-storage-provider-s3-region us-east-1 --output-file ${iamOutfile}
               if [ $? -ne 0 ]; then
                   echo "$(date) Failed to create IAM"
                   echo "$(date) Destroying the AWS infrastructure"
@@ -329,8 +311,8 @@ spec:
                       echo "$(date) Timeout waiting for a successful provisioning of hosted cluster."
                       ${KUBECTL_COMMAND} get managedcluster ${infraId} -o yaml
                       echo "$(date) Destroying the AWS infrastructure and IAM"
-                      #${HYPERSHIFT_COMMAND} destroy iam aws --aws-creds ${AWS_CREDS_FILE} --infra-id ${infraId}
-                      #${HYPERSHIFT_COMMAND} destroy infra aws --aws-creds ${AWS_CREDS_FILE} --base-domain ${BASE_DOMAIN} --infra-id ${infraId}
+                      ${HYPERSHIFT_COMMAND} destroy iam aws --aws-creds ${AWS_CREDS_FILE} --infra-id ${infraId}
+                      ${HYPERSHIFT_COMMAND} destroy infra aws --aws-creds ${AWS_CREDS_FILE} --base-domain ${BASE_DOMAIN} --infra-id ${infraId}
                       exit 1
                   fi
 
@@ -452,7 +434,7 @@ spec:
           enableHypershiftForLocalCluster() {
               ${KUBECTL_COMMAND} create secret generic hypershift-operator-external-dns-credentials --from-file=credentials=${AWS_CREDS_FILE} --from-literal=provider=aws --from-literal=domain-filter=${EXT_DNS_DOMAIN} -n local-cluster
               if [ $? -ne 0 ]; then
-                  echo "$(date) failed to acreate secret hypershift-operator-external-dns-credentials"
+                  echo "$(date) failed to create secret hypershift-operator-external-dns-credentials"
                   exit 1
               fi
 
@@ -574,11 +556,11 @@ spec:
           cloneHypershiftAddonRepo
 
           # Enabled hosted mode addons
-          # https://github.com/stolostron/hypershift-addon-operator/blob/main/docs/running_mce_acm_addons_hostedmode.md
+          # https://github.com/stolostron/hypershift-addon-operator/blob/main/docs/advanced/running_mce_acm_addons_hostedmode.md
           echo "$(date) ==== Enable hosted mode addon configuration ===="
           enableHostedModeAddon
 
-          # Generate AWS infrastructure and IAM for the first hosted cluster
+          # Generate AWS infrastructure and IAM for the hosted cluster
           # Generate the follwing YAMLs:
           #   - manifestwork YAML containing HostedCluster and NodePool
           #   - manifestwork YAML containing htpasswd for the hosted cluster (OCP user identify provider)
@@ -587,15 +569,6 @@ spec:
           echo "$(date) ==== Creating hosted cluster  ${CLUSTER_NAME_1} ===="
           createHostedCluster ${CLUSTER_NAME_1} ${INFRA_ID_1} ${CLUSTER_UUID_1} ${INFRA_OUTPUT_FILE_1} ${IAM_OUTPUT_FILE_1}
 
-          # Generate AWS infrastructure and IAM for the second hosted cluster
-          # The output of this is:
-          #   - manifestwork YAML containing HostedCluster and NodePool
-          #   - manifestwork YAML containing htpasswd for the hosted cluster (OCP user identify provider)
-          #   - managed cluster YAML to import the hosted cluster
-          # Then apply them to create a hosted cluster
-          #echo "$(date) ==== Creating hosted cluster  ${CLUSTER_NAME_2} ===="
-          #createHostedCluster ${CLUSTER_NAME_2} ${INFRA_ID_2} ${CLUSTER_UUID_2} ${INFRA_OUTPUT_FILE_2} ${IAM_OUTPUT_FILE_2}
-
           sleep 30
 
           # Verify that the managed cluster is imported, hosted cluster and node pool are available
@@ -603,23 +576,15 @@ spec:
           echo "$(date) ==== Verifying hosted cluster  ${CLUSTER_NAME_1} ===="
           verifyHostedCluster ${INFRA_ID_1}
 
-          #echo "$(date) ==== Verifying hosted cluster  ${CLUSTER_NAME_2} ===="
-          #verifyHostedCluster ${INFRA_ID_2}
-
-          # Delete the first managed cluster
+          # Delete the managed cluster
           echo "$(date) ==== Deleting hosted cluster  ${CLUSTER_NAME_1} ===="
           deleteHostedCluster ${CLUSTER_NAME_1} ${INFRA_ID_1}
 
-          # Delete the second managed cluster
-          #echo "$(date) ==== Deleting hosted cluster  ${CLUSTER_NAME_2} ===="
-          #deleteHostedCluster ${CLUSTER_NAME_2} ${INFRA_ID_2}
 
           # Destroy infra, IAM and remove files
           echo "$(date) ==== Cleaning up hosted cluster  ${CLUSTER_NAME_1} ===="
           cleaup ${CLUSTER_NAME_1} ${INFRA_ID_1} ${INFRA_OUTPUT_FILE_1} ${IAM_OUTPUT_FILE_1}
 
-          #echo "$(date) ==== Cleaning up hosted cluster  ${CLUSTER_NAME_2} ===="
-          #cleaup ${CLUSTER_NAME_2} ${INFRA_ID_2} ${INFRA_OUTPUT_FILE_2} ${IAM_OUTPUT_FILE_2}
           exit 0
       command:
         - /bin/bash
