@@ -14,12 +14,12 @@ spec:
       spec:
         serviceAccountName: pipeline
         pipelineRef:
-          name: deploy-downstream-acm-and-hypershift-deployment-ds
+          name: deploy-downstream-acm-and-hosted-cluster
         params:
           - name: clusterPoolName
-            value: hypershift-ci-clusterpool-west2
+            value: hypershift-ci-pool
           - name: clusterClaimName
-            value: hs-ci-us-cluster
+            value: hs-ci-ds-cluster-test
           - name: clusterClaimLifetime
             value: 11h
           - name: namespace

@@ -1,7 +1,7 @@
 apiVersion: tekton.dev/v1beta1
 kind: Pipeline
 metadata:
-  name: test-deploy-downstream-acm-and-hosted-cluster
+  name: deploy-downstream-acm-and-hosted-cluster
 spec:
   params:
     - name: clusterPoolName

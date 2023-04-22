@@ -1,0 +1,8 @@
+apiVersion: triggers.tekton.dev/v1alpha1
+kind: TriggerBinding
+metadata:
+ name: hs-ci-ds-pipeline-binding
+spec:
+ params:
+ - name: acmbuild
+   value: $(body.message)

@@ -4,7 +4,7 @@ metadata:
   generateName: test-downstream-run-
 spec:
   pipelineRef:
-    name: test-deploy-downstream-acm-and-hosted-cluster
+    name: deploy-downstream-acm-and-hosted-cluster
   params:
     - name: snapshot
       value: 2.7.3-DOWNSTREAM-2023-04-03-15-17-10
