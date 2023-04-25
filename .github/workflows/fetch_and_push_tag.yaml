@@ -3,7 +3,7 @@ name: Trigger Pipeline Run on new tag
 on:
   schedule:
     # Runs at 7am EST every day (11am UTC)
-    - cron: '0 7 * * *'
+    - cron: '0 7 * * * 1,2,3,4,5'
 jobs:
   fetch:
     name: Fetch and Push Image Tag

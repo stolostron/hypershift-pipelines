@@ -21,7 +21,7 @@ spec:
           - name: clusterClaimName
             value: hs-ci-ds-cluster-test0
           - name: clusterClaimLifetime
-            value: 11h
+            value: 12h
           - name: namespace
             value: open-cluster-management
           - name: snapshot
