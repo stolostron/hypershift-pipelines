@@ -13,4 +13,6 @@ jobs:
         # Get the latest 2.7.3 DOWNSTREAM tag
         run: tag=$(curl -X GET "https://quay.io/api/v1/repository/acm-d/acm-custom-registry/tag/" | jq .tags[].name | grep 2.7.3-DOWNSTREAM | head -1)
       - name: Push Tag
-        run: curl -v -H 'content-Type: application/json' -d '{"message": "2.7.3-DOWNSTREAM"}' http://el-hs-ci-ds-github-listener-test-hypershift-devel.apps.collective.aws.red-chesterfield.com
+        run: >-
+          curl -v -H 'content-Type: application/json' -d '{"message": "2.7.3-wedw"}' http://el-hs-ci-ds-github-listener-test-hypershift-devel.apps.collective.aws.red-chesterfield.com
+        
