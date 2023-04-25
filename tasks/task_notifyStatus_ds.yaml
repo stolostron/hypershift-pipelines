@@ -1,9 +1,13 @@
 apiVersion: tekton.dev/v1beta1
 kind: Task
 metadata:
-  name: notify-status-ds
+  name: notify-status-ds-27
 spec:
   params:
+  - name: pipelineRunID
+    default: ""
+    description: The id of the pipeline run
+    type: string
   - name: snapshot
     default: ""
     description: The SNAPSHOT Tag used to deploy the catalogsources
@@ -15,47 +19,28 @@ spec:
   - name: hubOcLogin
     default: ""
     description: OC Login command for the Hub cluster
-    type: string 
-  - name: spokeOcLogin
-    default: ""
-    description: OC Login command for the Spoke cluster
-    type: string         
+    type: string       
   - name: sendNotification
     default: "false"
     description: Sends notification to slack if value is true
-    type: string       
-  - name: mchStatus
-    default: "false"
-    description: ACM install status
-    type: string      
-  - name: hubHd
-    default: "false"
-    description: HyperShift deployment output on the hub
-    type: string  
+    type: string     
   steps:
   - args:
     - |-
       #!/bin/bash
       set -e
 
-      # Workaround pipeline task bug when task fails      
-      hubHdStatus="Failed"
-      if [[ "$(inputs.params.hubHd)" == *"Completed"* ]]; then
-        hubHdStatus="Succeeded"
-      fi
-
-      overallStatus="$(inputs.params.runStatus)"
-      if [[ $hubHdStatus == "Failed" ]]; then
-        overallStatus="Failed"
-      fi
+      PR_LINK=https://console-openshift-console.apps.collective.aws.red-chesterfield.com/k8s/ns/hypershift-devel/tekton.dev~v1beta1~PipelineRun/$(inputs.params.pipelineRunID)
+      
+      STATUS_EMOJI=:failed:
+      
+      if [ $(params.runStatus) == "Succeeded" ]; then STATUS_EMOJI=:done-circle-check: ; fi
+      
+      MESSAGE="$STATUS_EMOJI Daily ACM Hypershift Downstream Test\nACM Build: \`$(inputs.params.snapshot)\` \nStatus: $(inputs.params.runStatus)\nPipeline Run: $PR_LINK\nCluster Login: \`$(inputs.params.hubOcLogin)\`"
 
       if [[ "$(inputs.params.sendNotification)" == "true" ]]; then
-        echo "Send notification to app-lifecycle-backend-dev slack channel"
-        curl -X POST -H 'Content-type: application/json' --data "{\"text\":\"ACM build $(inputs.params.snapshot) overall status: $overallStatus\n\tACM install:$(inputs.params.mchStatus)\n\tHub HD:$hubHdStatus\n\nHub HD Output:\n\t$(inputs.params.hubHd)\n\nHub login:\n$(inputs.params.hubOcLogin)\"}" https://hooks.slack.com/services/T027F3GAJ/
-
-        echo "Send notification to team-acm-hypershift slack channel"
-        curl -X POST -H 'Content-type: application/json' --data "{\"text\":\"ACM build $(inputs.params.snapshot) overall status: $overallStatus\n\tACM install:$(inputs.params.mchStatus)\n\tHub HD:$hubHdStatus\n\nHub HD Output:\n\t$(inputs.params.hubHd)\"}" https://hooks.slack.com/services/
-
+        echo "Send notification to acm-hypershift-notifications slack channel"
+        curl -X POST -H 'Content-type: application/json' --data "{\"text\": \$MESSAGE\}" $SLACK_WEBHOOK
       else
         echo "Skip notification to slack channel"
       fi
@@ -65,6 +50,12 @@ spec:
     command:
     - /bin/bash
     - -c
+    env:
+    - name: SLACK_WEBHOOK
+      valueFrom:
+        secretKeyRef:
+          name: slack-webhook
+          key: webhook
     image: quay.io/zkayyali812/ocm-utils:latest
     name: apply
     resources: {}

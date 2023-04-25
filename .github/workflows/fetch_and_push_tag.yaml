@@ -1,0 +1,22 @@
+name: Trigger Pipeline Run on new tag
+
+on:
+  schedule:
+    # Runs at 7am EST every day (11am UTC)
+    - cron: '0 7 * * * 1,2,3,4,5'
+jobs:
+  fetch:
+    name: Fetch and Push Image Tag
+    runs-on: ubuntu-latest
+    steps:
+      - name: Fetch Tag
+        # Get the latest 2.7.3 DOWNSTREAM tag
+        run: echo "tag=$(curl -X GET "https://quay.io/api/v1/repository/acm-d/acm-custom-registry/tag/" | jq .tags[].name | grep 2.7.3-DOWNSTREAM | head -1 | sed -e 's|\"||g')" >> $GITHUB_ENV
+      - name: echo tag
+        run: |
+          echo "Using tag" ${{ env.tag }}
+      - name: Push Tag
+        run: >-
+          curl -v -H 'content-Type: application/json' -d '{"message": "${{env.tag}}"}' http://el-hs-ci-ds-github-listener-test-hypershift-devel.apps.collective.aws.red-chesterfield.com
+
+        
