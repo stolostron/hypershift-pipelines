@@ -2,8 +2,7 @@ apiVersion: v1
 kind: Secret
 metadata:
   name: slack-webhook
-  namespace: <namespace>
 type: Opaque
 data:
-  webhook: <base64 encoded webhook>
+  webhook: <base64 encoded webhook> #e.g. echo -n "https://hooks.slack.com/services/abc/xyz" | base64
 
