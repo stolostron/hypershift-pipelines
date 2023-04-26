@@ -5,4 +5,6 @@ metadata:
 spec:
  params:
  - name: acmbuild
-   value: $(body.message)
+   value: $(body.message.tag27)
+ - name: upgradebuild
+   value: $(body.message.tag28)

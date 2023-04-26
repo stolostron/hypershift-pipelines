@@ -1,0 +1,269 @@
+apiVersion: tekton.dev/v1beta1
+kind: Task
+metadata:
+  name: destroy-hosted-cluster
+spec:
+  params:
+    - name: targetManagedCluster
+      default: local-cluster
+      description: The managedcluster to target to become a managementcluster
+      type: string
+    - name: hostedClusterName
+      description: The name hosted cluster to be deleted
+    - name: infraID
+      description: The infraid of the hosted cluster to be destroyed
+      type: string
+  results:
+    - name: hdStatus
+      description: Status of the Hosted cluster
+  steps:
+    - args:
+        - |-
+          #!/bin/bash
+
+          _LOGIN_CMD=$(cat login.sh)
+          eval "$_LOGIN_CMD"
+
+          REGION=us-west-1
+          BASE_DOMAIN=dev11.red-chesterfield.com
+          HOSTING_CLUSTER_NAME=$(inputs.params.targetManagedCluster)
+          HOSTED_CLUSTER_NAME=$(inputs.params.hostedClusterName)
+          INFRA_ID=$(inputs.params.infraID)
+
+          # The AWS creds - shouldnt have to create them again but couldnt find file for some reason
+          AWS_ACCESS_KEY_ID=$(cat awsCreds.yaml | yq eval '.data.aws_access_key_id' - | base64 -d)
+          AWS_SECRET_ACCESS_KEY=$(cat awsCreds.yaml | yq eval '.data.aws_secret_access_key' - | base64 -d)
+
+          # Create AWS credentials file
+          mkdir ~/.aws
+          cat <<EOF >~/.aws/credentials
+          [default]
+          aws_access_key_id=${AWS_ACCESS_KEY_ID}
+          aws_secret_access_key=${AWS_SECRET_ACCESS_KEY}
+          EOF
+
+
+          echo "HOSTING_CLUSTER_NAME $HOSTING_CLUSTER_NAME"
+          echo "HOSTED_CLUSTER_NAME" $HOSTED_CLUSTER_NAME
+          echo "REGION $REGION"
+          echo "BASE_DOMAIN $BASE_DOMAIN"
+          echo "INFRA_ID" $INFRA_ID
+
+
+          AWS_CREDS_FILE=~/.aws/credentials
+          echo "AWS CREDS"
+          cat $AWS_CREDS_FILE
+
+
+          # CLI variables
+          # This value can be like "kubectl --kubeconfig my/hub/kubeconfig"
+          KUBECTL_COMMAND="oc"
+          # This value can be a different file path pinting to the hypershift CLI binary like "/my/dir/hypershift"
+          HYPERSHIFT_COMMAND="hypershift"
+          
+          
+          INFRA_OUTPUT_FILE_1=${HOSTED_CLUSTER_NAME}-infraout
+          IAM_OUTPUT_FILE_1=${HOSTED_CLUSTER_NAME}-iam
+
+          deleteHostedCluster() {
+              clusterName=$1
+              infraID=$2
+
+              ${KUBECTL_COMMAND} delete -f ${clusterName}-managedcluster.yaml
+              if [ $? -ne 0 ]; then
+                  echo "$(date) failed to delete -f ${clusterName}-managedcluster.yaml"
+                  echo "$(date) Destroying the AWS infrastructure and IAM"
+                  ${HYPERSHIFT_COMMAND} destroy iam aws --region ${REGION} --aws-creds ${AWS_CREDS_FILE} --infra-id ${infraID}
+                  ${HYPERSHIFT_COMMAND} destroy infra aws --region ${REGION} --aws-creds ${AWS_CREDS_FILE} --base-domain ${BASE_DOMAIN} --infra-id ${infraID}
+                  #exit 1 Don't exit so we can continue cleaning up as much as we can
+              fi
+
+              # Verify that the managed cluster is deleted
+              waitForManagedClusterDelete ${infraID}
+
+              # Delete the manifestworks
+              ${KUBECTL_COMMAND} delete -f ${clusterName}-htpasswd.yaml
+              if [ $? -ne 0 ]; then
+                  echo "$(date) failed to delete -f ${clusterName}-htpasswd.yaml"
+                  echo "$(date) Destroying the AWS infrastructure and IAM"
+                  ${HYPERSHIFT_COMMAND} destroy iam aws --region ${REGION} --aws-creds ${AWS_CREDS_FILE} --infra-id ${infraID}
+                  ${HYPERSHIFT_COMMAND} destroy infra aws --region ${REGION} --aws-creds ${AWS_CREDS_FILE} --base-domain ${BASE_DOMAIN} --infra-id ${infraID}
+                  #exit 1 Don't exit so we can continue cleaning up as much as we can
+              fi
+
+              ${KUBECTL_COMMAND} delete -f ${clusterName}.yaml
+              if [ $? -ne 0 ]; then
+                  echo "$(date) failed to delete -f ${clusterName}.yaml"
+                  echo "$(date) Destroying the AWS infrastructure and IAM"
+                  ${HYPERSHIFT_COMMAND} destroy iam aws --region ${REGION} --aws-creds ${AWS_CREDS_FILE} --infra-id ${infraID}
+                  ${HYPERSHIFT_COMMAND} destroy infra aws --region ${REGION} --aws-creds ${AWS_CREDS_FILE} --base-domain ${BASE_DOMAIN} --infra-id ${infraID}
+                  #exit 1 Don't exit so we can continue cleaning up as much as we can
+              fi
+
+              # Verify that the manifestwork with hostedcluster and nodepool payload is deleted
+              waitForManifestworkDelete ${HOSTING_CLUSTER_NAME} ${infraID}
+          }
+
+          cleaup() {
+              clusterName=$1
+              infraID=$2
+              infraFile=$3
+              iamFile=$4
+
+              echo "$(date) ==== Destroying AWS IAM ===="
+              echo "$(date) ${HYPERSHIFT_COMMAND} destroy iam aws --region ${REGION} --aws-creds ${AWS_CREDS_FILE} --infra-id ${infraID}"
+
+              ${HYPERSHIFT_COMMAND} destroy iam aws --region ${REGION} --aws-creds ${AWS_CREDS_FILE} --infra-id ${infraID}
+
+
+              echo "$(date) ==== Destroying AWS infrastructure ===="
+              echo "$(date) ${HYPERSHIFT_COMMAND} destroy infra aws --region ${REGION} -aws-creds ${AWS_CREDS_FILE} --base-domain ${BASE_DOMAIN} --infra-id ${infraID}"
+
+              ${HYPERSHIFT_COMMAND} destroy infra aws --region ${REGION} --aws-creds ${AWS_CREDS_FILE} --base-domain ${BASE_DOMAIN} --infra-id ${infraID}
+
+              # Remove the files
+              rm ${infraFile}
+              rm ${iamFile}
+              rm ${clusterName}.yaml
+              rm ${clusterName}-htpasswd.yaml
+              rm ${clusterName}-managedcluster.yaml
+              rm ${clusterName}.yaml-e
+              rm ${clusterName}-htpasswd.yaml-e
+              rm ${clusterName}-managedcluster.yaml-e
+          }
+
+          waitForManagedClusterDelete() {
+              FOUND=1
+              SECONDS=0
+
+              resName=$1
+
+              while [ ${FOUND} -eq 1 ]; do
+                  # Wait up to 30 minutes
+                  if [ $SECONDS -gt 1800 ]; then
+                      echo "$(date) Timed out waiting for managed cluster ${resName} to be deleted."
+                      ${KUBECTL_COMMAND} get managedcluster ${resName} -o yaml
+                      ${HYPERSHIFT_COMMAND} destroy iam aws --region ${REGION} --aws-creds ${AWS_CREDS_FILE} --infra-id ${INFRA_ID}
+                      ${HYPERSHIFT_COMMAND} destroy infra aws --region ${REGION} --aws-creds ${AWS_CREDS_FILE} --base-domain $BASE_DOMAIN --infra-id ${INFRA_ID}
+                      exit 1
+                  fi
+
+                  ${KUBECTL_COMMAND} get managedcluster ${resName}
+                  if [ $? -eq 0 ]; then
+                      echo "$(date) managed cluster ${resName} still exists"
+                  else
+                      echo "$(date) managed cluster ${resName} not found"
+                      break
+                  fi
+
+                  sleep 30
+                  (( SECONDS = SECONDS + 30 ))
+              done
+          }
+
+          waitForManifestworkDelete() {
+              FOUND=1
+              SECONDS=0
+
+              resNamespace=$1
+              resName=$2
+
+              while [ ${FOUND} -eq 1 ]; do
+                  # Wait up to 30 minutes
+                  if [ $SECONDS -gt 1800 ]; then
+                      echo "$(date) Timed out waiting for manifestwork ${resNamespace}/${resName} to be deleted."
+                      ${KUBECTL_COMMAND} get manifestwork ${resName} -n ${resNamespace} -o yaml
+                      ${HYPERSHIFT_COMMAND} destroy iam aws --region ${REGION} --aws-creds ${AWS_CREDS_FILE} --infra-id ${INFRA_ID}
+                      ${HYPERSHIFT_COMMAND} destroy infra aws --region ${REGION} --aws-creds ${AWS_CREDS_FILE} --base-domain $BASE_DOMAIN --infra-id ${INFRA_ID}
+                      exit 1
+                  fi
+
+                  ${KUBECTL_COMMAND} get manifestwork ${resName} -n ${resNamespace}
+                  if [ $? -eq 0 ]; then
+                      echo "$(date) manifestwork ${resNamespace}/${resName} still exists"
+                  else
+                      echo "$(date) manifestwork ${resNamespace}/${resName} not found"
+                      break
+                  fi
+
+                  sleep 30
+                  (( SECONDS = SECONDS + 30 ))
+              done
+          }
+
+          installHypershiftBinary() {
+              SECONDS=0
+              while : 
+              do
+                  if [ $SECONDS -gt 600 ]; then
+                      echo "$(date) Timeout waiting for hypershift-cli-download to be available."
+                      exit 1
+                  fi
+
+                  ${KUBECTL_COMMAND} get ConsoleCLIDownload hypershift-cli-download
+                  if [ $? -eq 0 ]; then
+                      echo "$(date) ConsoleCLIDownload hypershift-cli-download is available"
+                      sleep 60
+                      break
+                  fi
+
+                  sleep 10
+                  (( SECONDS = SECONDS + 10 ))
+              done
+
+              hypershiftTarGzURL=`${KUBECTL_COMMAND} get ConsoleCLIDownload hypershift-cli-download -o jsonpath='{.spec.links[?(@.text=="Download hypershift CLI for Linux for x86_64")].href}'`
+              echo "hypershiftTarGzURL $hypershiftTarGzURL"
+              if [ -z "$hypershiftTarGzURL" ]; then
+                      echo "$(date) failed to get Hypershift tar.gz ConsoleCLIDownload hypershift-cli-download"
+                  exit 1
+              fi
+
+              curl -LOk ${hypershiftTarGzURL}
+              if [ $? -ne 0 ]; then
+                  echo "$(date) failed to download ${hypershiftTarGzURL}"
+                  exit 1
+              fi
+
+              tar xvzf hypershift.tar.gz
+              if [ $? -ne 0 ]; then
+                  echo "$(date) failed to untar hypershift.tar.gz"
+                  exit 1
+              fi
+
+              mv hypershift /bin
+              if [ $? -ne 0 ]; then
+                  echo "$(date) failed to mv extracted hypershift binary to /bin"
+                  exit 1
+              fi
+
+              chmod +x /bin/hypershift
+              if [ $? -ne 0 ]; then
+                  echo "$(date) failed to chmod +x /bin/hypershift"
+                  exit 1
+              fi
+          }
+
+          installHypershiftBinary
+
+          #to move into the same directory as task_createHostedCluster.yaml
+          cd hypershift-addon-operator/test/canary 
+
+          # Delete the managed cluster
+          echo "$(date) ==== Deleting hosted cluster  ${HOSTED_CLUSTER_NAME} ===="
+          deleteHostedCluster ${HOSTED_CLUSTER_NAME} ${INFRA_ID}
+
+
+          # Destroy infra, IAM and remove files
+          echo "$(date) ==== Cleaning up hosted cluster  ${HOSTED_CLUSTER_NAME} ===="
+          cleaup ${HOSTED_CLUSTER_NAME} ${INFRA_ID} ${INFRA_OUTPUT_FILE_1} ${IAM_OUTPUT_FILE_1}
+
+          exit 0
+      command:
+        - /bin/bash
+        - -c
+      image: quay.io/zkayyali812/ocm-utils:latest
+      name: apply
+      resources: {}
+      workingDir: /workspace/source
+  workspaces:
+    - name: source

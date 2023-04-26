@@ -10,13 +10,14 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Fetch Tag
-        # Get the latest 2.7.3 DOWNSTREAM tag
-        run: echo "tag=$(curl -X GET "https://quay.io/api/v1/repository/acm-d/acm-custom-registry/tag/" | jq .tags[].name | grep 2.7.*-DOWNSTREAM | head -1 | sed -e 's|\"||g')" >> $GITHUB_ENV
+        # Get the latest 2.7.x DOWNSTREAM tag
+        run: |
+          echo "tag27=$(curl -X GET "https://quay.io/api/v1/repository/acm-d/acm-custom-registry/tag/" | jq .tags[].name | grep 2.7.*-DOWNSTREAM | head -1 | sed -e 's|\"||g')" >> $GITHUB_ENV
+          echo "tag28=$(curl -X GET "https://quay.io/api/v1/repository/acm-d/acm-custom-registry/tag/" | jq .tags[].name | grep 2.8.*-DOWNSTREAM | head -1 | sed -e 's|\"||g')" >> $GITHUB_ENV
       - name: echo tag
         run: |
-          echo "Using tag" ${{ env.tag }}
+          echo "Using tags" ${{ env.tag27 }} "and" ${{ env.tag28 }} 
       - name: Push Tag
         run: >-
-          curl -v -H 'content-Type: application/json' -d '{"message": "${{env.tag}}"}' http://el-hs-ci-ds-github-listener-test-hypershift-devel.apps.collective.aws.red-chesterfield.com
-
+          curl -v -H 'content-Type: application/json' -d '{"message": {"tag27": "${{env.tag27}}", "tag28": "${{env.tag28}}"} }' http://el-hs-ci-ds-github-listener-test-hypershift-devel.apps.collective.aws.red-chesterfield.com
         

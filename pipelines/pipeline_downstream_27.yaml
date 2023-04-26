@@ -20,9 +20,9 @@ spec:
       type: string
       description: The namespace to deploy ACM onto the target cluster
       default: "open-cluster-management"
-    - name: snapshot
+    - name: downstream
       type: string
-      description: The downstream SNAPSHOT used to deploy ACM
+      description: The downstream DOWNSTREAM used to deploy ACM
       default: "2.0-latest"
     - name: sendNotification
       type: string
@@ -53,8 +53,8 @@ spec:
           value: $(params.clusterPoolName)
         - name: clusterClaimLifetime
           value: $(params.clusterClaimLifetime)
-        - name: snapshot
-          value: "$(params.snapshot)"
+        - name: downstream
+          value: "$(params.downstream)"
       taskRef:
         kind: Task
         name: deploy-acm-hyper-param-validation-27
@@ -98,8 +98,8 @@ spec:
       params:
         - name: namespace
           value: "$(params.namespace)"
-        - name: snapshot
-          value: "$(params.snapshot)"
+        - name: downstream
+          value: "$(params.downstream)"
         - name: imagePullSecret
           value: "$(tasks.checkout-hub-cluster.results.imagePullSecret)"
       runAfter:
@@ -114,8 +114,8 @@ spec:
       params:
         - name: namespace
           value: $(params.namespace)
-        - name: snapshot
-          value: "$(params.snapshot)"
+        - name: downstream
+          value: "$(params.downstream)"
         - name: imagePullSecret
           value: "$(tasks.checkout-hub-cluster.results.imagePullSecret)"
       runAfter:
@@ -150,6 +150,22 @@ spec:
       workspaces:
         - name: source
           workspace: shared-workspace
+    - name: destroy-hosted-cluster
+      params:
+        - name: targetManagedCluster
+          value: local-cluster
+        - name: hostedClusterName
+          value: "$(tasks.create-hosted-cluster.results.hostedClusterName)"
+        - name: infraID
+          value: "$(tasks.create-hosted-cluster.results.infraID)"
+      runAfter:
+        - create-hosted-cluster
+      taskRef:
+        kind: Task
+        name: destroy-hosted-cluster
+      workspaces:
+        - name: source
+          workspace: shared-workspace
   workspaces:
     - name: shared-workspace
   finally:
@@ -159,8 +175,8 @@ spec:
           value: "$(context.pipelineRun.name)"
         - name: sendNotification
           value: "$(params.sendNotification)"
-        - name: snapshot
-          value: "$(params.snapshot)"
+        - name: downstream
+          value: "$(params.downstream)"
         - name: runStatus
           value: "$(tasks.status)"
         - name: hubOcLogin

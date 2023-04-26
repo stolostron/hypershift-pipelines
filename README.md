@@ -9,7 +9,7 @@ Their are 2 main Pipelines contained in this repo, one which functions in the Up
 
 The following prereqs are required: 
 
-1. A ClusterPool in the same namespace of the Pipelines. See [clusterpool.yaml](./prereqs/clusterpool.yaml) for an example. It is recommended to have a size of at least 2. The recommended OCP version is 4.12.14
+1. A ClusterPool in the same namespace of the Pipelines. See [clusterpool.yaml](./prereqs/clusterpool.yaml) for an example. It is recommended to have a size of at least 2. The recommended OCP version is 4.12.12+
 2. The following secrets must be defined in the same namespace of the Pipelines. See [secrets_template.yaml](./prereqs/secrets_template.yaml)
 3. An OCP Cluster (4.8+ recommended) with the following Operators Installed - 
     * OpenShift Pipelines

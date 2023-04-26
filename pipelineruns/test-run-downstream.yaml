@@ -4,19 +4,19 @@ metadata:
   generateName: test-downstream-run-
 spec:
   pipelineRef:
-    name: deploy-downstream-acm-and-hosted-cluster
+    name: deploy-downstream-acm-and-hosted-cluster-upgrade
   params:
-    - name: snapshot
+    - name: downstream
       value: 2.7.3-DOWNSTREAM-2023-04-03-15-17-10
   podTemplate:
     securityContext:
       fsGroup: 65532
   workspaces:
-  - name: shared-workspace
-    volumeClaimTemplate:
-      spec:
-        accessModes:
-        - ReadWriteOnce
-        resources:
-          requests:
-            storage: 1Gi
+    - name: shared-workspace
+      volumeClaimTemplate:
+        spec:
+          accessModes:
+            - ReadWriteOnce
+          resources:
+            requests:
+              storage: 1Gi

@@ -24,7 +24,7 @@ spec:
             value: 11h
           - name: namespace
             value: open-cluster-management
-          - name: snapshot
+          - name: downstream
             value: 2.6.4-DOWNSTREAM-2023-01-12-23-24-24
           - name: targetSnapshot
             value: $(tt.params.acmbuild)
