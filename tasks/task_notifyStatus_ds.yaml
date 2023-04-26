@@ -40,7 +40,9 @@ spec:
 
       if [[ "$(inputs.params.sendNotification)" == "true" ]]; then
         echo "Send notification to acm-hypershift-notifications slack channel"
-        curl -X POST -H 'Content-type: application/json' --data "{\"text\": \$MESSAGE\}" $SLACK_WEBHOOK
+        echo "Message: "$MESSAGE
+        echo "\n"
+        curl -X POST -H 'Content-type: application/json' --data "{\"text\": \"$MESSAGE\"}" $SLACK_WEBHOOK
       else
         echo "Skip notification to slack channel"
       fi

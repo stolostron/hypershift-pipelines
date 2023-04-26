@@ -19,7 +19,7 @@ spec:
           - name: clusterPoolName
             value: hypershift-ci-pool
           - name: clusterClaimName
-            value: hypershift-ci-ds-cluster
+            value: hypershift-ci-ds-cluster-test
           - name: clusterClaimLifetime
             value: 12h
           - name: namespace

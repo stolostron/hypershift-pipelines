@@ -3,14 +3,14 @@
 ## About
 
 This repo is a contains a set of Pipelines and their associated Tasks to deploy ACM, enable HyperShift, and deploy a Hosted Cluster.
-Their are 2 main Pipelines contained in this repo, one which functions in the Upstream, and another in the Downstream.
+Their are 2 main Pipelines contained in this repo, one which functions in the Upstream (todo), and another in the Downstream.
 
 ## Prereqs
 
 The following prereqs are required: 
 
-1. A ClusterPool in the same namespace of the Pipelines. See [clusterpool.yaml](./hypershift-pipelines/prereqs/clusterpool.yaml) for an example. It is recommended to have a size of at least 2. HyperShift requires OCP 4.10.7 in order to run a HostedCluster.
-2. The following secrets must be defined in the same namespace of the Pipelines. See [secrets_template.yaml](./hypershift-pipelines/prereqs/secrets_template.yaml)
+1. A ClusterPool in the same namespace of the Pipelines. See [clusterpool.yaml](./prereqs/clusterpool.yaml) for an example. It is recommended to have a size of at least 2. The recommended OCP version is 4.12.14
+2. The following secrets must be defined in the same namespace of the Pipelines. See [secrets_template.yaml](./prereqs/secrets_template.yaml)
 3. An OCP Cluster (4.8+ recommended) with the following Operators Installed - 
     * OpenShift Pipelines
     * Advanced Cluster Management (2.4+ recommended)
@@ -18,23 +18,30 @@ The following prereqs are required:
 
 ## How to deploy
 
-To deploy the Pipelines run - 
+Make sure you're logged into the cluster that hosts the clusterpool.
+
+Clone and move into the `hypershift-pipelines` directory
+```
+git clone git@github.com:stolostron/hypershift-pipelines.git
+cd hypershift-pipelines
+```
+
+Make sure you have [oc](https://docs.openshift.com/container-platform/4.12/cli_reference/openshift_cli/getting-started-cli.html) installed. Then to deploy the Pipelines run - 
 
 ```
-$ oc apply -f hypershift-pipelines -n <NAMESPACE>
+./deploy_pipelines.sh -n <NAMESPACE>
 ```
+
+If you want to send notifications to slack, populate the [slack webhook secret](resources/slack_webhook.yaml) with your webhook and apply it with -
+```
+oc apply -f ./resources/slack_webhook.yaml -n <NAMESPACE>
+```
+
+## How to trigger a pipeline run
 
 ## Cleanup
 
-To cleanup HyperShift resources and the clusters after deploying via either the upstream or downstream pipelines, run the [cleanup pipeline](./hypershift-pipelines/pipeline_cleanup.yaml) - `cleanup-acm-and-hypershift-deployment`.
-
-This pipeline takes in 1 paramter - the name of the clusterclaim used in either the upstream or downstream Pipelines and completes the following operations - 
-
-1. Checks out existing hub cluster and logs into it
-2. Deletes all HyperShiftDeployments on the hub
-3. Detaches the imported spoke cluster
-4. Deletes the MultiClusterHub custom resource
-5. Deletes both the spoke and hub clusterclaims
+todo
 
 
 ### Handy Repositories

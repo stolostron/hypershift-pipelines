@@ -3,7 +3,7 @@ name: Trigger Pipeline Run on new tag
 on:
   schedule:
     # Runs at 7am EST every day (11am UTC)
-    - cron: '0 7 * * * 1,2,3,4,5'
+    - cron: '0 11 * * 1-5'
 jobs:
   fetch:
     name: Fetch and Push Image Tag
@@ -11,7 +11,7 @@ jobs:
     steps:
       - name: Fetch Tag
         # Get the latest 2.7.3 DOWNSTREAM tag
-        run: echo "tag=$(curl -X GET "https://quay.io/api/v1/repository/acm-d/acm-custom-registry/tag/" | jq .tags[].name | grep 2.7.3-DOWNSTREAM | head -1 | sed -e 's|\"||g')" >> $GITHUB_ENV
+        run: echo "tag=$(curl -X GET "https://quay.io/api/v1/repository/acm-d/acm-custom-registry/tag/" | jq .tags[].name | grep 2.7.*-DOWNSTREAM | head -1 | sed -e 's|\"||g')" >> $GITHUB_ENV
       - name: echo tag
         run: |
           echo "Using tag" ${{ env.tag }}
