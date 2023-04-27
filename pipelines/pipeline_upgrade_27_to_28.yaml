@@ -1,17 +1,26 @@
+#This pipeline tests upgrading a hosting cluster from 2.7 to 2.8
+#Steps
+# - Create hosting cluster on 2.7
+# - Create a hosted cluster on 2.7
+# - Upgrade hosting cluster to 2.8
+# - Check health of hosted cluster
+# - Tear down hosted cluster created on 2.7
+# - Create hosted cluster on 2.8
+
 apiVersion: tekton.dev/v1beta1
 kind: Pipeline
 metadata:
-  name: deploy-upstream-acm-and-hypershift-deployment-26
+  name: deploy-downstream-acm-and-hosted-cluster-upgrade
 spec:
   params:
     - name: clusterPoolName
       type: string
       description: The name of the clusterpool to use
-      default: "hypershift-ci-clusterpool-west2"
+      default: "hypershift-ci-pool"
     - name: clusterClaimName
       type: string
       description: The name of the clusterclaim to claim
-      default: "hs-ci-us-cluster"
+      default: "hs-ci-dev-cluster-test-change"
     - name: clusterClaimLifetime
       type: string
       description: The length of the lifetime of the clusterclaim. Default 8h
@@ -20,9 +29,9 @@ spec:
       type: string
       description: The namespace to deploy ACM onto the target cluster
       default: "open-cluster-management"
-    - name: snapshot
+    - name: downstream
       type: string
-      description: The upstream SNAPSHOT to used to deploy ACM
+      description: The image DOWNSTREAM used to deploy ACM
       default: "2.0-latest"
     - name: sendNotification
       type: string
@@ -32,7 +41,7 @@ spec:
     - name: fetch-repo-samples
       params:
         - name: url
-          value: https://github.com/philipwu08/openshift-pipelines.git
+          value: https://github.com/stolostron/hypershift-pipelines.git
         - name: revision
           value: main
         - name: deleteExisting
@@ -53,11 +62,11 @@ spec:
           value: $(params.clusterPoolName)
         - name: clusterClaimLifetime
           value: $(params.clusterClaimLifetime)
-        - name: snapshot
-          value: "$(params.snapshot)"
+        - name: downstream
+          value: "$(params.downstream)"
       taskRef:
         kind: Task
-        name: deploy-acm-hyper-param-validation
+        name: deploy-acm-hyper-param-validation-27
       workspaces:
         - name: source
           workspace: shared-workspace
@@ -94,35 +103,19 @@ spec:
       workspaces:
         - name: source
           workspace: shared-workspace
-    - name: checkout-spoke-cluster
-      params:
-        - name: clusterClaimName
-          value: $(params.clusterClaimName)-spoke
-        - name: clusterPoolName
-          value: $(params.clusterPoolName)
-        - name: clusterClaimLifetime
-          value: $(params.clusterClaimLifetime)
-      runAfter:
-        - login-to-hub-cluster
-      taskRef:
-        kind: Task
-        name: deploy-acm-hyper-checkout-cluster
-      workspaces:
-        - name: source
-          workspace: shared-workspace
     - name: ensure-acm-prereqs
       params:
         - name: namespace
           value: "$(params.namespace)"
-        - name: snapshot
-          value: "$(params.snapshot)"
+        - name: downstream
+          value: "$(params.downstream)"
         - name: imagePullSecret
           value: "$(tasks.checkout-hub-cluster.results.imagePullSecret)"
       runAfter:
         - login-to-hub-cluster
       taskRef:
         kind: Task
-        name: deploy-us-acm-hyper-prereqs
+        name: deploy-ds-acm-hyper-prereqs
       workspaces:
         - name: source
           workspace: shared-workspace
@@ -130,8 +123,8 @@ spec:
       params:
         - name: namespace
           value: $(params.namespace)
-        - name: snapshot
-          value: "$(params.snapshot)"
+        - name: downstream
+          value: "$(params.downstream)"
         - name: imagePullSecret
           value: "$(tasks.checkout-hub-cluster.results.imagePullSecret)"
       runAfter:
@@ -150,82 +143,56 @@ spec:
         - ensure-acm
       taskRef:
         kind: Task
-        name: deploy-acm-hyper-apply-mch-26
+        name: deploy-acm-hyper-apply-mch-27
       workspaces:
         - name: source
           workspace: shared-workspace
-    - name: import-spoke-cluster
-      params:
-        - name: clusterClaimName
-          value: $(params.clusterClaimName)-spoke
-      runAfter:
-        - ensure-mch
-        - checkout-spoke-cluster
-      taskRef:
-        kind: Task
-        name: deploy-acm-hyper-import-spoke
-      workspaces:
-        - name: source
-          workspace: shared-workspace
-    - name: ensure-hypershiftdeployment-hub
+    - name: create-hosted-cluster
       params:
         - name: targetManagedCluster
           value: local-cluster
       runAfter:
         - ensure-mch
-        - import-spoke-cluster
       taskRef:
         kind: Task
-        name: deploy-acm-hyper-apply-hyper-deployment
+        name: create-hosted-cluster
       workspaces:
         - name: source
           workspace: shared-workspace
-    - name: ensure-hypershiftdeployment-spoke
+    - name: destroy-hosted-cluster
       params:
         - name: targetManagedCluster
-          value: $(params.clusterClaimName)-spoke
+          value: local-cluster
+        - name: hostedClusterName
+          value: "$(tasks.create-hosted-cluster.results.hostedClusterName)"
+        - name: infraID
+          value: "$(tasks.create-hosted-cluster.results.infraID)"
       runAfter:
-        - import-spoke-cluster
+        - create-hosted-cluster
       taskRef:
         kind: Task
-        name: deploy-acm-hyper-apply-hyper-deployment
+        name: destroy-hosted-cluster
       workspaces:
         - name: source
           workspace: shared-workspace
   workspaces:
     - name: shared-workspace
   finally:
-    - name: notify-status
+    - name: notify-status-ds
       params:
+        - name: pipelineRunID
+          value: "$(context.pipelineRun.name)"
         - name: sendNotification
           value: "$(params.sendNotification)"
-        - name: snapshot
-          value: "$(params.snapshot)"
+        - name: downstream
+          value: "$(params.downstream)"
         - name: runStatus
           value: "$(tasks.status)"
         - name: hubOcLogin
           value: "$(tasks.checkout-hub-cluster.results.ocLogin)"
-        - name: spokeOcLogin
-          value: "$(tasks.checkout-spoke-cluster.results.ocLogin)"
-        - name: mchStatus
-          value: "$(tasks.ensure-mch.status)"
-        - name: hubHd
-          value: "$(tasks.ensure-hypershiftdeployment-hub.results.hdStatus)"
-        - name: spokeHd
-          value: "$(tasks.ensure-hypershiftdeployment-spoke.results.hdStatus)"
       taskRef:
         kind: Task
-        name: notify-status
-      workspaces:
-        - name: source
-          workspace: shared-workspace
-    - name: cleanup-acm-hypershift-deployments
-      params:
-        - name: clusterClaimName
-          value: $(params.clusterClaimName)
-      taskRef:
-        kind: Task
-        name: cleanup-acm-hypershift-deployments
+        name: notify-status-upgrade
       workspaces:
         - name: source
           workspace: shared-workspace

@@ -6,6 +6,8 @@ spec:
   params:
     - name: acmbuild
       description: ACM build
+    - name: upgradebuild
+      description: ACM build to upgrade to
   resourcetemplates:
     - apiVersion: tekton.dev/v1beta1
       kind: PipelineRun
@@ -19,13 +21,15 @@ spec:
           - name: clusterPoolName
             value: hypershift-ci-pool
           - name: clusterClaimName
-            value: hypershift-ci-ds-cluster-test
+            value: hypershift-ci-ds-cluster-test-task
           - name: clusterClaimLifetime
             value: 12h
           - name: namespace
             value: open-cluster-management
-          - name: snapshot
+          - name: downstream
             value: $(tt.params.acmbuild)
+          - name: upgrade
+            value: $(tt.params.upgradebuild)
           - name: sendNotification
             value: "true"
         timeout: 1h30m0s

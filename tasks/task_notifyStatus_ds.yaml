@@ -4,63 +4,63 @@ metadata:
   name: notify-status-ds-27
 spec:
   params:
-  - name: pipelineRunID
-    default: ""
-    description: The id of the pipeline run
-    type: string
-  - name: snapshot
-    default: ""
-    description: The SNAPSHOT Tag used to deploy the catalogsources
-    type: string 
-  - name: runStatus
-    default: ""
-    description: Overall status of the pipeline run
-    type: string     
-  - name: hubOcLogin
-    default: ""
-    description: OC Login command for the Hub cluster
-    type: string       
-  - name: sendNotification
-    default: "false"
-    description: Sends notification to slack if value is true
-    type: string     
+    - name: pipelineRunID
+      default: ""
+      description: The id of the pipeline run
+      type: string
+    - name: downstream
+      default: ""
+      description: The DOWNSTREAM Tag used to deploy the catalogsources
+      type: string
+    - name: runStatus
+      default: ""
+      description: Overall status of the pipeline run
+      type: string
+    - name: hubOcLogin
+      default: ""
+      description: OC Login command for the Hub cluster
+      type: string
+    - name: sendNotification
+      default: "false"
+      description: Sends notification to slack if value is true
+      type: string
   steps:
-  - args:
-    - |-
-      #!/bin/bash
-      set -e
+    - args:
+        - |-
+          #!/bin/bash
+          set -e
 
-      PR_LINK=https://console-openshift-console.apps.collective.aws.red-chesterfield.com/k8s/ns/hypershift-devel/tekton.dev~v1beta1~PipelineRun/$(inputs.params.pipelineRunID)
-      
-      STATUS_EMOJI=:failed:
-      
-      if [ $(params.runStatus) == "Succeeded" ]; then STATUS_EMOJI=:done-circle-check: ; fi
-      
-      MESSAGE="$STATUS_EMOJI Daily ACM Hypershift Downstream Test\nACM Build: \`$(inputs.params.snapshot)\` \nStatus: $(inputs.params.runStatus)\nPipeline Run: $PR_LINK\nCluster Login: \`$(inputs.params.hubOcLogin)\`"
+          PR_LINK=https://console-openshift-console.apps.collective.aws.red-chesterfield.com/k8s/ns/hypershift-devel/tekton.dev~v1beta1~PipelineRun/$(inputs.params.pipelineRunID)
 
-      if [[ "$(inputs.params.sendNotification)" == "true" ]]; then
-        echo "Send notification to acm-hypershift-notifications slack channel"
-        echo "Message: "$MESSAGE
-        echo "\n"
-        curl -X POST -H 'Content-type: application/json' --data "{\"text\": \"$MESSAGE\"}" $SLACK_WEBHOOK
-      else
-        echo "Skip notification to slack channel"
-      fi
+          STATUS_EMOJI=:failed:
 
-      exit 0
+          if [ $(params.runStatus) == "Succeeded" ]; then STATUS_EMOJI=:done-circle-check: ; fi
 
-    command:
-    - /bin/bash
-    - -c
-    env:
-    - name: SLACK_WEBHOOK
-      valueFrom:
-        secretKeyRef:
-          name: slack-webhook
-          key: webhook
-    image: quay.io/zkayyali812/ocm-utils:latest
-    name: apply
-    resources: {}
-    workingDir: /workspace/source
+          MESSAGE=":downstream: Daily ACM Hypershift Downstream Test :downstream:\nACM Build: \`$(inputs.params.downstream)\` \nStatus: $(inputs.params.runStatus) $STATUS_EMOJI \nPipeline Run: $PR_LINK"
+
+          if [[ "$(inputs.params.sendNotification)" == "true" ]]; then
+            echo "Send notification to acm-hypershift-notifications slack channel"
+            echo "Message: "$MESSAGE
+            echo "\n"
+            curl -X POST -H 'Content-type: application/json' --data "{\"text\": \"$MESSAGE\"}" $SLACK_WEBHOOK
+          else
+            echo "Skip notification to slack channel"
+          fi
+
+          exit 0
+
+      command:
+        - /bin/bash
+        - -c
+      env:
+        - name: SLACK_WEBHOOK
+          valueFrom:
+            secretKeyRef:
+              name: slack-webhook
+              key: webhook
+      image: quay.io/zkayyali812/ocm-utils:latest
+      name: apply
+      resources: {}
+      workingDir: /workspace/source
   workspaces:
-  - name: source
+    - name: source

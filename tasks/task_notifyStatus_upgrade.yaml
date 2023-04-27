@@ -4,51 +4,63 @@ metadata:
   name: notify-status-upgrade
 spec:
   params:
-  - name: snapshot
-    default: ""
-    description: The SNAPSHOT Tag used to deploy the catalogsources
-    type: string 
-  - name: targetSnapshot
-    default: ""
-    description: The SNAPSHOT Tag used to deploy the catalogsources
-    type: string 
-  - name: runStatus
-    default: ""
-    description: Overall status of the pipeline run
-    type: string     
-  - name: hubOcLogin
-    default: ""
-    description: OC Login command for the Hub cluster
-    type: string 
-  - name: spokeOcLogin
-    default: ""
-    description: OC Login command for the Spoke cluster
-    type: string         
-  - name: sendNotification
-    default: "false"
-    description: Sends notification to slack if value is true
-    type: string       
+    - name: pipelineRunID
+      default: ""
+      description: The id of the pipeline run
+      type: string
+    - name: downstream
+      default: ""
+      description: The DOWNSTREAM Tag used to deploy the catalogsources
+      type: string
+    - name: runStatus
+      default: ""
+      description: Overall status of the pipeline run
+      type: string
+    - name: hubOcLogin
+      default: ""
+      description: OC Login command for the Hub cluster
+      type: string
+    - name: sendNotification
+      default: "false"
+      description: Sends notification to slack if value is true
+      type: string
   steps:
-  - args:
-    - |-
-      #!/bin/bash
-      set -e
+    - args:
+        - |-
+          #!/bin/bash
+          set -e
 
-      if [[ "$(inputs.params.sendNotification)" == "true" ]]; then
-        echo "Send notification to acm-hypershift-notifications slack channel"
-        curl -X POST -H 'Content-type: application/json' --data "{\"text\":\"HyperShift test with ACM upgrade\n  ACM 2.6 build: $(inputs.params.snapshot)\n  ACM 2.7 build: $(inputs.params.targetSnapshot)\nOverall status: $(inputs.params.runStatus)\"}" https://hooks.slack.com/services/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
-      else
-        echo "Skip notification to slack channel"
-      fi
+          PR_LINK=https://console-openshift-console.apps.collective.aws.red-chesterfield.com/k8s/ns/hypershift-devel/tekton.dev~v1beta1~PipelineRun/$(inputs.params.pipelineRunID)
 
-      exit 0
+          STATUS_EMOJI=:failed:
 
-    command:
-    - /bin/bash
-    - -c
-    image: quay.io/zkayyali812/ocm-utils:latest
-    name: apply
-    resources: {}
-    workingDir: /workspace/source
+          if [ $(params.runStatus) == "Succeeded" ]; then STATUS_EMOJI=:done-circle-check: ; fi
+
+          MESSAGE=":chart_with_upwards_trend: Daily ACM Hypershift Upgrade Test :chart_with_upwards_trend:\nACM Upgrade: \`$(inputs.params.downstream)\` :fast_forward: \`$(inputs.params.downstream)\` \nStatus: $(inputs.params.runStatus)$STATUS_EMOJI\nPipeline Run: $PR_LINK"
+
+          if [[ "$(inputs.params.sendNotification)" == "true" ]]; then
+            echo "Send notification to acm-hypershift-notifications slack channel"
+            echo "Message: "$MESSAGE
+            echo "\n"
+            curl -X POST -H 'Content-type: application/json' --data "{\"text\": \"$MESSAGE\"}" $SLACK_WEBHOOK
+          else
+            echo "Skip notification to slack channel"
+          fi
+
+          exit 0
+
+      command:
+        - /bin/bash
+        - -c
+      env:
+        - name: SLACK_WEBHOOK
+          valueFrom:
+            secretKeyRef:
+              name: slack-webhook
+              key: webhook
+      image: quay.io/zkayyali812/ocm-utils:latest
+      name: apply
+      resources: {}
+      workingDir: /workspace/source
   workspaces:
-  - name: source
+    - name: source
