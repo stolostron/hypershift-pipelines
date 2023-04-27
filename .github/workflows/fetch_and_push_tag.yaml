@@ -7,6 +7,8 @@ on:
 jobs:
   fetch:
     name: Fetch and Push Image Tag
+    env:
+      EVENT_LISTENER_ROUTE: ${{ secrets.EVENT_LISTENER_ROUTE }}
     runs-on: ubuntu-latest
     steps:
       - name: Fetch Tag
@@ -19,5 +21,5 @@ jobs:
           echo "Using tags" ${{ env.tag27 }} "and" ${{ env.tag28 }} 
       - name: Push Tag
         run: >-
-          curl -v -H 'content-Type: application/json' -d '{"message": {"tag27": "${{env.tag27}}", "tag28": "${{env.tag28}}"} }' http://el-hs-ci-ds-github-listener-test-hypershift-devel.apps.collective.aws.red-chesterfield.com
+          curl -v -H 'content-Type: application/json' -d '{"message": {"tag27": "${{env.tag27}}", "tag28": "${{env.tag28}}"} }' $EVENT_LISTENER_ROUTE
         
