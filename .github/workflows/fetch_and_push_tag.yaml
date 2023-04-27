@@ -1,9 +1,11 @@
 name: Trigger Pipeline Run on new tag
 
 on:
+  workflow_dispatch:
   schedule:
     # Runs at 7am EST every day (11am UTC)
     - cron: '0 11 * * 1-5'
+
 jobs:
   fetch:
     name: Fetch and Push Image Tag
