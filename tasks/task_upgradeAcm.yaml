@@ -29,12 +29,14 @@ spec:
           NEXT_VERSION=$(echo $(inputs.params.targetSnapshot) | sed -e "s/^\(.\{5\}\).*$/\1/")
           STARTING_CSV="advanced-cluster-management.v${NEXT_VERSION}"
           CHANNEL_VERSION=$(echo ${NEXT_VERSION} | sed -nr "s/v{0,1}([0-9]+\.[0-9]+)\.{0,1}[0-9]*.*/\1/p")
-          NEXT_MCE_VERSION=$(curl -H "Accept: application/vnd.github.v4.raw" -H "Authorization: Bearer $GH_TOKEN" "https://api.github.com/repos/stolostron/pipeline/contents/2.8/2.8.0/2.8.0-SNAPSHOT-2023-04-28-01-51-52?ref=mapping" | jq -r 'values.MCE' | sed 's/BACKPLANE/DOWNANDBACK/')
-          CHANNEL_MCE_VERSION=$(echo ${NEXT_MCE_VERSION} | sed -nr "s/v{0,1}([0-9]+\.[0-9]+)\.{0,1}[0-9]*.*/\1/p")
+          NEXT_MCE_SNAPSHOT=$(curl -H "Accept: application/vnd.github.v4.raw" -H "Authorization: Bearer $GH_TOKEN" "https://api.github.com/repos/stolostron/pipeline/contents/2.8/2.8.0/2.8.0-SNAPSHOT-2023-04-28-01-51-52?ref=mapping" | jq -r 'values.MCE' | sed 's/BACKPLANE/DOWNANDBACK/')
+          NEXT_MCE_VERSION=$(echo $NEXT_MCE_SNAPSHOT | sed -e "s/^\(.\{5\}\).*$/\1/")
+          CHANNEL_MCE_VERSION=$(echo ${NEXT_MCE_SNAPSHOT} | sed -nr "s/v{0,1}([0-9]+\.[0-9]+)\.{0,1}[0-9]*.*/\1/p")
 
           echo "NEXT_VERSION" $NEXT_VERSION
           echo "STARTING_CSV" $STARTING_CSV
           echo "CHANNEL_VERSION" $CHANNEL_VERSION
+          echo "NEXT_MCE_SNAPSHOT" $NEXT_MCE_SNAPSHOT
           echo "NEXT_MCE_VERSION" $NEXT_MCE_VERSION
           echo "CHANNEL_MCE_VERSION" $CHANNEL_MCE_VERSION
 
@@ -54,16 +56,13 @@ spec:
           function waitForMCERegistryPod() {
               for i in `seq 1 30`; do
                   oc get po -n openshift-marketplace -lolm.catalogSource=multiclusterengine-catalog -oyaml
-                  oc get po -n openshift-marketplace -lolm.catalogSource=multiclusterengine-catalog -oyaml | grep "$NEXT_MCE_VERSION"
+                  echo "VERSION IN POD"
+                  oc get po -n openshift-marketplace -lolm.catalogSource=multiclusterengine-catalog -oyaml | grep "$NEXT_MCE_SNAPSHOT"
                   if [ $? -eq 0 ]; then
                     break
                   fi
-                  _MCE_IMAGE_NAME="mce-custom-registry"
-                  if [[ ${CUSTOM_REGISTRY_REPO} == "quay.io/stolostron" ]]; then
-                      _MCE_IMAGE_NAME="cmb-custom-registry"
-                  fi
                   echo 'waiting for subscription pod to use new image'
-                  oc get po -n openshift-marketplace -lolm.catalogSource=multiclusterengine-catalog -oyaml | grep "$NEXT_MCE_VERSION"
+                  oc get po -n openshift-marketplace -lolm.catalogSource=multiclusterengine-catalog -oyaml | grep "$NEXT_MCE_SNAPSHOT"
                   echo 'patch again'
                   oc patch catalogsource multiclusterengine-catalog -n openshift-marketplace --type=json -p '[{"op":"replace","path":"/spec/image","value":"quay.io/acm-d/mce-custom-registry:'$(inputs.params.targetSnapshot)'"}]'
                   oc patch subscription.operators.coreos.com multicluster-engine -n $(inputs.params.mceNamespace) --type "json" -p "[{\"op\":\"replace\",\"path\": \"/spec/channel\",\"value\":\"stable-$CHANNEL_MCE_VERSION\"}]"
