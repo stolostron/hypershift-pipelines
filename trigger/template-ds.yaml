@@ -28,7 +28,7 @@ spec:
             value: open-cluster-management
           - name: downstream
             value: $(tt.params.acmbuild)
-          - name: upgrade
+          - name: targetSnapshot
             value: $(tt.params.upgradebuild)
           - name: sendNotification
             value: "true"
