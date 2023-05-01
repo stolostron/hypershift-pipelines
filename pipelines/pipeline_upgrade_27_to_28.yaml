@@ -246,13 +246,31 @@ spec:
           value: "$(params.sendNotification)"
         - name: downstream
           value: "$(params.downstream)"
-        - name: runStatus
-          value: "$(tasks.status)"
-        - name: hubOcLogin
-          value: "$(tasks.checkout-hub-cluster.results.ocLogin)"
+        - name: downstreamStatus
+          value: "$(tasks.create-hosted-cluster.status)"
       taskRef:
         kind: Task
         name: notify-status-ds-27
+      workspaces:
+        - name: source
+          workspace: shared-workspace
+    - name: notify-status-upgrade
+      params:
+        - name: pipelineRunID
+          value: "$(context.pipelineRun.name)"
+        - name: sendNotification
+          value: "$(params.sendNotification)"
+        - name: downstream
+          value: "$(params.downstream)"
+        - name: targetSnapshot
+          value: $(params.targetSnapshot)
+        - name: downstreamStatus
+          value: "$(tasks.create-hosted-cluster.status)"
+        - name: runStatus
+          value: "$(tasks.status)"
+      taskRef:
+        kind: Task
+        name: notify-status-upgrade
       workspaces:
         - name: source
           workspace: shared-workspace

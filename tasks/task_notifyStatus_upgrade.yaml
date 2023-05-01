@@ -12,13 +12,17 @@ spec:
       default: ""
       description: The DOWNSTREAM Tag used to deploy the catalogsources
       type: string
+    - name: targetSnapshot
+      default: ""
+      description: The targetSnapshot Tag used to upgrade ACM
+      type: string
     - name: runStatus
       default: ""
       description: Overall status of the pipeline run
       type: string
-    - name: hubOcLogin
+    - name: downstreamStatus
       default: ""
-      description: OC Login command for the Hub cluster
+      description: Status of the downstream run. If failed, upgrade will not run
       type: string
     - name: sendNotification
       default: "false"
@@ -33,10 +37,15 @@ spec:
           PR_LINK=https://console-openshift-console.apps.collective.aws.red-chesterfield.com/k8s/ns/hypershift-devel/tekton.dev~v1beta1~PipelineRun/$(inputs.params.pipelineRunID)
 
           STATUS_EMOJI=:failed:
+          STATUS=$(inputs.params.runStatus)
 
           if [ $(params.runStatus) == "Succeeded" ]; then STATUS_EMOJI=:done-circle-check: ; fi
+          if [ $(params.downstreamStatus) != "Succeeded" ]; then 
+            STATUS_EMOJI=:heavy_multiplication_x:
+            STATUS="Not run, previous test failed"
+          fi
 
-          MESSAGE=":chart_with_upwards_trend: Daily ACM Hypershift Upgrade Test :chart_with_upwards_trend:\nACM Upgrade: \`$(inputs.params.downstream)\` :fast_forward: \`$(inputs.params.downstream)\` \nStatus: $(inputs.params.runStatus)$STATUS_EMOJI\nPipeline Run: $PR_LINK"
+          MESSAGE=":chart_with_upwards_trend: Daily ACM Hypershift Upgrade Test :chart_with_upwards_trend:\nACM Upgrade: \`$(inputs.params.downstream)\` :fast_forward: \`$(inputs.params.targetSnapshot)\` \nStatus: $STATUS $STATUS_EMOJI\nPipeline Run: $PR_LINK"
 
           if [[ "$(inputs.params.sendNotification)" == "true" ]]; then
             echo "Send notification to acm-hypershift-notifications slack channel"
