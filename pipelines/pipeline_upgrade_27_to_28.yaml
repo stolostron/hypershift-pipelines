@@ -191,7 +191,7 @@ spec:
       workspaces:
         - name: source
           workspace: shared-workspace
-    - name: destroy-hosted-cluster
+    - name: destroy-hosted-cluster-after-upgrade
       params:
         - name: targetManagedCluster
           value: local-cluster
@@ -212,14 +212,14 @@ spec:
         - name: targetManagedCluster
           value: local-cluster
       runAfter:
-        - destroy-hosted-cluster
+        - destroy-hosted-cluster-after-upgrade
       taskRef:
         kind: Task
         name: create-hosted-cluster
       workspaces:
         - name: source
           workspace: shared-workspace
-    - name: destroy-hosted-cluster-after-upgrade
+    - name: destroy-hosted-cluster-on-upgraded
       params:
         - name: targetManagedCluster
           value: local-cluster
@@ -259,7 +259,7 @@ spec:
         - name: pipelineRunID
           value: "$(context.pipelineRun.name)"
         - name: sendNotification
-          value: "$(params.sendNotification)"
+          value: "false"
         - name: downstream
           value: "$(params.downstream)"
         - name: targetSnapshot
