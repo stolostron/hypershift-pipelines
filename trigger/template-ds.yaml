@@ -31,7 +31,7 @@ spec:
           - name: targetSnapshot
             value: $(tt.params.upgradebuild)
           - name: sendNotification
-            value: "true"
+            value: "false"
         timeout: 1h30m0s
         workspaces:
           - name: shared-workspace

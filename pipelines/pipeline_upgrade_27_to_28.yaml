@@ -175,7 +175,7 @@ spec:
       workspaces:
         - name: source
           workspace: shared-workspace
-    - name: destroy-hosted-cluster
+    - name: verify-migrated-hostedcluster
       params:
         - name: targetManagedCluster
           value: local-cluster
@@ -185,6 +185,50 @@ spec:
           value: "$(tasks.create-hosted-cluster.results.infraID)"
       runAfter:
         - upgrade-acm
+      taskRef:
+        kind: Task
+        name: verify-migrated-hostedcluster
+      workspaces:
+        - name: source
+          workspace: shared-workspace
+    - name: destroy-hosted-cluster
+      params:
+        - name: targetManagedCluster
+          value: local-cluster
+        - name: hostedClusterName
+          value: "$(tasks.create-hosted-cluster.results.hostedClusterName)"
+        - name: infraID
+          value: "$(tasks.create-hosted-cluster.results.infraID)"
+      runAfter:
+        - verify-migrated-hostedcluster
+      taskRef:
+        kind: Task
+        name: destroy-hosted-cluster
+      workspaces:
+        - name: source
+          workspace: shared-workspace
+    - name: create-hosted-cluster-after-upgrade
+      params:
+        - name: targetManagedCluster
+          value: local-cluster
+      runAfter:
+        - destroy-hosted-cluster
+      taskRef:
+        kind: Task
+        name: create-hosted-cluster
+      workspaces:
+        - name: source
+          workspace: shared-workspace
+    - name: destroy-hosted-cluster-after-upgrade
+      params:
+        - name: targetManagedCluster
+          value: local-cluster
+        - name: hostedClusterName
+          value: "$(tasks.create-hosted-cluster.results.hostedClusterName)"
+        - name: infraID
+          value: "$(tasks.create-hosted-cluster.results.infraID)"
+      runAfter:
+        - create-hosted-cluster-after-upgrade
       taskRef:
         kind: Task
         name: destroy-hosted-cluster

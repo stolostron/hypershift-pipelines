@@ -7,6 +7,13 @@ spec:
   - name: targetManagedCluster
     default: local-cluster
     description: The managedcluster to target to become a managementcluster
+  - name: hostedClusterName
+    default: 
+    description: The name of the hosted cluster to be verified
+    type: string
+  - name: infraID
+    default: 
+    description: The infraID of the hosted cluster to be verified
     type: string
   steps:
   - args:
@@ -18,20 +25,20 @@ spec:
       eval "$_LOGIN_CMD"
 
       _ATTEMPTS=0
-      until oc get hc -n clusters $(inputs.params.targetManagedCluster)-hd  -o jsonpath='{.status.version.history[0].state}' | grep "Completed";
+      until oc get hc -n ocm-staging-$(inputs.params.infraID) $(inputs.params.hostedClusterName)  -o jsonpath='{.status.version.history[0].state}' | grep "Completed";
       do 
           echo "$_ATTEMPTS/20: Waiting for hosted cluster to be complete... Sleeping 1 min"
           _ATTEMPTS=$((_ATTEMPTS + 1))
           sleep 60;
           if [[ $_ATTEMPTS == 20 ]]; then
               echo "Hosted cluster did not come up in the allotted time"
-              oc get hc -n clusters $(inputs.params.targetManagedCluster)-hd  -o yaml
+              oc get hc -n ocm-staging-$(inputs.params.infraID) $(inputs.params.hostedClusterName)  -o yaml
 
               exit 0
           fi
       done
 
-      echo "Hosting cluster clusters/$(inputs.params.targetManagedCluster)-hd is running"
+      echo "Hosted cluster $(inputs.params.hostedClusterName) is running"
 
       exit 0
     command:
