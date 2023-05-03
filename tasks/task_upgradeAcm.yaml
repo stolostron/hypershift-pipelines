@@ -27,9 +27,10 @@ spec:
           oc project $(inputs.params.namespace)
 
           NEXT_VERSION=$(echo $(inputs.params.targetSnapshot) | sed -e "s/^\(.\{5\}\).*$/\1/")
+          ACM_SNAPSHOT_FOR_URL=$(echo $(inputs.params.targetSnapshot) | sed 's/DOWNSTREAM/SNAPSHOT/')
           STARTING_CSV="advanced-cluster-management.v${NEXT_VERSION}"
           CHANNEL_VERSION=$(echo ${NEXT_VERSION} | sed -nr "s/v{0,1}([0-9]+\.[0-9]+)\.{0,1}[0-9]*.*/\1/p")
-          NEXT_MCE_SNAPSHOT=$(curl -H "Accept: application/vnd.github.v4.raw" -H "Authorization: Bearer $GH_TOKEN" "https://api.github.com/repos/stolostron/pipeline/contents/2.8/2.8.0/2.8.0-SNAPSHOT-2023-04-28-01-51-52?ref=mapping" | jq -r 'values.MCE' | sed 's/BACKPLANE/DOWNANDBACK/')
+          NEXT_MCE_SNAPSHOT=$(curl -H "Accept: application/vnd.github.v4.raw" -H "Authorization: Bearer $GH_TOKEN" "https://api.github.com/repos/stolostron/pipeline/contents/$CHANNEL_VERSION/$NEXT_VERSION/$ACM_SNAPSHOT_FOR_URL?ref=mapping" | jq -r 'values.MCE' | sed 's/BACKPLANE/DOWNANDBACK/')
           NEXT_MCE_VERSION=$(echo $NEXT_MCE_SNAPSHOT | sed -e "s/^\(.\{5\}\).*$/\1/")
           CHANNEL_MCE_VERSION=$(echo ${NEXT_MCE_SNAPSHOT} | sed -nr "s/v{0,1}([0-9]+\.[0-9]+)\.{0,1}[0-9]*.*/\1/p")
 

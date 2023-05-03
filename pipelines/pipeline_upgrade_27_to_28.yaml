@@ -224,9 +224,9 @@ spec:
         - name: targetManagedCluster
           value: local-cluster
         - name: hostedClusterName
-          value: "$(tasks.create-hosted-cluster.results.hostedClusterName)"
+          value: "$(tasks.create-hosted-cluster-after-upgrade.results.hostedClusterName)"
         - name: infraID
-          value: "$(tasks.create-hosted-cluster.results.infraID)"
+          value: "$(tasks.create-hosted-cluster-after-upgrade.results.infraID)"
       runAfter:
         - create-hosted-cluster-after-upgrade
       taskRef:
@@ -259,7 +259,7 @@ spec:
         - name: pipelineRunID
           value: "$(context.pipelineRun.name)"
         - name: sendNotification
-          value: "false"
+          value: "$(params.sendNotification)"
         - name: downstream
           value: "$(params.downstream)"
         - name: targetSnapshot

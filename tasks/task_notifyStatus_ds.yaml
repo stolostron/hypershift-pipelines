@@ -32,7 +32,7 @@ spec:
 
           if [ $(inputs.params.downstreamStatus) == "Succeeded" ]; then STATUS_EMOJI=:done-circle-check: ; fi
 
-          MESSAGE=":downstream: Daily ACM Hypershift Downstream Test :downstream:\nACM Build: \`$(inputs.params.downstream)\` \nStatus: $(inputs.params.downstreamStatus) $STATUS_EMOJI \nPipeline Run: $PR_LINK"
+          MESSAGE=":downstream: Daily ACM Hypershift Downstream Test :downstream:\nACM Build: \`$(inputs.params.downstream)\` \nOCP Version: \`4.12.14\` \nStatus: $(inputs.params.downstreamStatus) $STATUS_EMOJI \nPipeline Run: $PR_LINK"
 
           if [[ "$(inputs.params.sendNotification)" == "true" ]]; then
             echo "Send notification to acm-hypershift-notifications slack channel"
