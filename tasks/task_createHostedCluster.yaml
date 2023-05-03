@@ -65,7 +65,7 @@ spec:
           # This value can be a different file path pinting to the hypershift CLI binary like "/my/dir/hypershift"
           HYPERSHIFT_COMMAND="hypershift"
           
-          oc create secret generic hypershift-operator-oidc-provider-s3-credentials --from-file=credentials=${AWS_CREDS_FILE} --from-literal=bucket=${S3_BUCKET_NAME} --from-literal=region=us-east-1 -n local-cluster
+          oc create secret generic hypershift-operator-oidc-provider-s3-credentials --from-file=credentials=${AWS_CREDS_FILE} --from-literal=bucket=${S3_BUCKET_NAME} --from-literal=region=us-east-1 -n local-cluster || true
           
           # Generate the hosted cluster name
           CLUSTER_NAME_1=${CLUSTER_NAME_PREFIX}$(cat /dev/urandom | env LC_ALL=C tr -dc 'a-z0-9' | fold -w 6 | head -n 1)
@@ -351,7 +351,6 @@ spec:
               ${KUBECTL_COMMAND} create secret generic hypershift-operator-external-dns-credentials --from-file=credentials=${AWS_CREDS_FILE} --from-literal=provider=aws --from-literal=domain-filter=${EXT_DNS_DOMAIN} -n local-cluster
               if [ $? -ne 0 ]; then
                   echo "$(date) failed to create secret hypershift-operator-external-dns-credentials"
-                  exit 1
               fi
 
               # Wait for hypershift-addon to be available

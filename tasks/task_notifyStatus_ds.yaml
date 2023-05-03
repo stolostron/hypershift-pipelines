@@ -12,13 +12,9 @@ spec:
       default: ""
       description: The DOWNSTREAM Tag used to deploy the catalogsources
       type: string
-    - name: runStatus
+    - name: downstreamStatus
       default: ""
-      description: Overall status of the pipeline run
-      type: string
-    - name: hubOcLogin
-      default: ""
-      description: OC Login command for the Hub cluster
+      description: Status of the downstream run. If failed, upgrade will not run
       type: string
     - name: sendNotification
       default: "false"
@@ -34,9 +30,9 @@ spec:
 
           STATUS_EMOJI=:failed:
 
-          if [ $(params.runStatus) == "Succeeded" ]; then STATUS_EMOJI=:done-circle-check: ; fi
+          if [ $(inputs.params.downstreamStatus) == "Succeeded" ]; then STATUS_EMOJI=:done-circle-check: ; fi
 
-          MESSAGE=":downstream: Daily ACM Hypershift Downstream Test :downstream:\nACM Build: \`$(inputs.params.downstream)\` \nStatus: $(inputs.params.runStatus) $STATUS_EMOJI \nPipeline Run: $PR_LINK"
+          MESSAGE=":downstream: Daily ACM Hypershift Downstream Test :downstream:\nACM Build: \`$(inputs.params.downstream)\` \nOCP Version: \`4.12.14\` \nStatus: $(inputs.params.downstreamStatus) $STATUS_EMOJI \nPipeline Run: $PR_LINK"
 
           if [[ "$(inputs.params.sendNotification)" == "true" ]]; then
             echo "Send notification to acm-hypershift-notifications slack channel"

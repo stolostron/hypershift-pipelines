@@ -10,7 +10,7 @@
 apiVersion: tekton.dev/v1beta1
 kind: Pipeline
 metadata:
-  name: deploy-downstream-acm-and-hosted-cluster-upgrade
+  name: deploy-downstream-acm-and-hosted-cluster
 spec:
   params:
     - name: clusterPoolName
@@ -20,7 +20,7 @@ spec:
     - name: clusterClaimName
       type: string
       description: The name of the clusterclaim to claim
-      default: "hs-ci-dev-cluster-test-change"
+      default: "hs-ci-dev-cluster"
     - name: clusterClaimLifetime
       type: string
       description: The length of the lifetime of the clusterclaim. Default 8h
@@ -31,7 +31,11 @@ spec:
       default: "open-cluster-management"
     - name: downstream
       type: string
-      description: The image DOWNSTREAM used to deploy ACM
+      description: The downstream DOWNSTREAM used to deploy ACM
+      default: "2.0-latest"
+    - name: targetSnapshot
+      type: string
+      description: The downstream tag used to upgrade ACM
       default: "2.0-latest"
     - name: sendNotification
       type: string
@@ -159,7 +163,19 @@ spec:
       workspaces:
         - name: source
           workspace: shared-workspace
-    - name: destroy-hosted-cluster
+    - name: upgrade-acm
+      params:
+        - name: targetSnapshot
+          value: $(params.targetSnapshot)
+      runAfter:
+        - create-hosted-cluster
+      taskRef:
+        kind: Task
+        name: upgrade-acm
+      workspaces:
+        - name: source
+          workspace: shared-workspace
+    - name: verify-migrated-hostedcluster
       params:
         - name: targetManagedCluster
           value: local-cluster
@@ -168,7 +184,51 @@ spec:
         - name: infraID
           value: "$(tasks.create-hosted-cluster.results.infraID)"
       runAfter:
-        - create-hosted-cluster
+        - upgrade-acm
+      taskRef:
+        kind: Task
+        name: verify-migrated-hostedcluster
+      workspaces:
+        - name: source
+          workspace: shared-workspace
+    - name: destroy-hosted-cluster-after-upgrade
+      params:
+        - name: targetManagedCluster
+          value: local-cluster
+        - name: hostedClusterName
+          value: "$(tasks.create-hosted-cluster.results.hostedClusterName)"
+        - name: infraID
+          value: "$(tasks.create-hosted-cluster.results.infraID)"
+      runAfter:
+        - verify-migrated-hostedcluster
+      taskRef:
+        kind: Task
+        name: destroy-hosted-cluster
+      workspaces:
+        - name: source
+          workspace: shared-workspace
+    - name: create-hosted-cluster-after-upgrade
+      params:
+        - name: targetManagedCluster
+          value: local-cluster
+      runAfter:
+        - destroy-hosted-cluster-after-upgrade
+      taskRef:
+        kind: Task
+        name: create-hosted-cluster
+      workspaces:
+        - name: source
+          workspace: shared-workspace
+    - name: destroy-hosted-cluster-on-upgraded
+      params:
+        - name: targetManagedCluster
+          value: local-cluster
+        - name: hostedClusterName
+          value: "$(tasks.create-hosted-cluster-after-upgrade.results.hostedClusterName)"
+        - name: infraID
+          value: "$(tasks.create-hosted-cluster-after-upgrade.results.infraID)"
+      runAfter:
+        - create-hosted-cluster-after-upgrade
       taskRef:
         kind: Task
         name: destroy-hosted-cluster
@@ -186,10 +246,28 @@ spec:
           value: "$(params.sendNotification)"
         - name: downstream
           value: "$(params.downstream)"
+        - name: downstreamStatus
+          value: "$(tasks.create-hosted-cluster.status)"
+      taskRef:
+        kind: Task
+        name: notify-status-ds-27
+      workspaces:
+        - name: source
+          workspace: shared-workspace
+    - name: notify-status-upgrade
+      params:
+        - name: pipelineRunID
+          value: "$(context.pipelineRun.name)"
+        - name: sendNotification
+          value: "$(params.sendNotification)"
+        - name: downstream
+          value: "$(params.downstream)"
+        - name: targetSnapshot
+          value: $(params.targetSnapshot)
+        - name: downstreamStatus
+          value: "$(tasks.create-hosted-cluster.status)"
         - name: runStatus
           value: "$(tasks.status)"
-        - name: hubOcLogin
-          value: "$(tasks.checkout-hub-cluster.results.ocLogin)"
       taskRef:
         kind: Task
         name: notify-status-upgrade
