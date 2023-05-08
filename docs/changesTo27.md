@@ -53,8 +53,8 @@ singapore-gateway-pipelines/*
 * Changed channel from "stable-2.1" to "stable-2.2" in [resources/multiclusterhub_27.yaml](../resources/multiclusterhub_27.yaml) to reflect mce channel for ACM 2.7.
 * Created secret [resources/slack_webhook.yaml](../resources/slack_webhook.yaml) to use to post notifications to slack without exposing webhook to public
 * Changed tasks/task_applyMch.yaml to [tasks/task_applyMch_27.yaml](../tasks/task_applyMch_27.yaml) and used [resources/multiclusterhub_27.yaml](../resources/multiclusterhub_27.yaml) instead of multiclusterhub.yaml
-* Created secret hypershift-ci-dev11-creds on collective which hold AWS credentials to be used later
-* Changed [tasks/task_checkoutCluster.yaml](../tasks/task_checkoutCluster.yaml) to copy hypershift-ci-dev11-creds from collective to the clusterclaim to be used later 
+* Created secret hypershift-pipelines-credentials on collective which hold AWS credentials to be used later
+* Changed [tasks/task_checkoutCluster.yaml](../tasks/task_checkoutCluster.yaml) to copy hypershift-pipelines-credentials from collective to the clusterclaim to be used later 
 * Changes to [tasks/task_createHostedCluster.yaml](../tasks/task_createHostedCluster.yaml)
   * Removed destruction of hosted cluster (unless creation failed)
   * Changed region for hosted cluster creation to us-west-1

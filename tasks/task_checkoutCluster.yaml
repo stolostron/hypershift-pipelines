@@ -69,7 +69,7 @@ spec:
           oc get secret -n ${NAMESPACE} ${KUBECONFIG_SECRET} -o yaml | yq eval '.data.kubeconfig' - | base64 -d > $(inputs.params.clusterClaimName)-kubeconfig.yaml
 
           echo "Copying aws credentials from collective"
-          oc get secret hypershift-ci-dev11-creds -n hypershift-devel -o yaml > awsCreds.yaml
+          oc get secret hypershift-pipelines-credentials -n hypershift-devel -o yaml > awsCreds.yaml
 
 
           _IMAGE_PULL_SECRET=$(oc get secret hypershift-pipelines-multiclusterhub-operator-pull-secret -o yaml | yq eval '.data.".dockerconfigjson"' -)

@@ -6,30 +6,34 @@ spec:
   params:
     - name: acmbuild
       description: ACM build
+    - name: upgradebuild
+      description: ACM build to upgrade to
   resourcetemplates:
     - apiVersion: tekton.dev/v1beta1
       kind: PipelineRun
       metadata:
-        generateName: hs-ci-daily-build
+        generateName: hs-ci-daily-build-
       spec:
         serviceAccountName: pipeline
         pipelineRef:
-          name: deploy-upstream-acm-and-hypershift-deployment-ds
+          name: deploy-downstream-acm-and-hosted-cluster
         params:
           - name: clusterPoolName
-            value: hypershift-ci-clusterpool-west2
+            value: hypershift-ci-pool
           - name: clusterClaimName
-            value: hs-ci-us-cluster
+            value: hypershift-ci-ds-cluster-test-task
           - name: clusterClaimLifetime
-            value: 11h
+            value: 12h
           - name: namespace
             value: open-cluster-management
           - name: downstream
             value: $(tt.params.acmbuild)
+          - name: targetSnapshot
+            value: $(tt.params.upgradebuild)
           - name: sendNotification
             value: "true"
         timeout: 1h30m0s
         workspaces:
           - name: shared-workspace
             persistentVolumeClaim:
-              claimName: hs-ws-claim
+              claimName: hs-ds-ws-claim
