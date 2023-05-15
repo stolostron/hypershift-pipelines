@@ -16,8 +16,25 @@ jobs:
       - name: Fetch Tag
         # Get the latest 2.7.x DOWNSTREAM tag
         run: |
-          echo "tag27=$(curl -X GET "https://quay.io/api/v1/repository/acm-d/acm-custom-registry/tag/" | jq .tags[].name | grep 2.7.*-DOWNSTREAM | head -1 | sed -e 's|\"||g')" >> $GITHUB_ENV
-          echo "tag28=$(curl -X GET "https://quay.io/api/v1/repository/acm-d/acm-custom-registry/tag/" | jq .tags[].name | grep 2.8.*-DOWNSTREAM | head -1 | sed -e 's|\"||g')" >> $GITHUB_ENV
+          for page in $(seq 1 10); do
+            tag27=$(curl -s "https://quay.io/api/v1/repository/acm-d/acm-custom-registry/tag/?page=$page" | jq .tags[].name | grep 2.7.*-DOWNSTREAM | head -1 | sed -e 's|\"||g')
+            if [[ -n "$tag27" ]]; then
+              echo "tag27=$tag27" >> $GITHUB_ENV
+              break
+            else
+              echo "tag27 is empty, trying again"
+            fi
+          done
+
+          for page in $(seq 1 10); do
+            tag28=$(curl -s "https://quay.io/api/v1/repository/acm-d/acm-custom-registry/tag/?page=$page" | jq .tags[].name | grep 2.8.*-DOWNSTREAM | head -1 | sed -e 's|\"||g')
+            if [[ -n "$tag28" ]]; then
+              echo "tag28=$tag28" >> $GITHUB_ENV
+              break
+            else
+              echo "tag28 is empty, trying again"
+            fi
+          done
       - name: echo tag
         run: |
           echo "Using tags" ${{ env.tag27 }} "and" ${{ env.tag28 }} 
