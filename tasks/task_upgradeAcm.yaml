@@ -42,6 +42,11 @@ spec:
           echo "NEXT_MCE_VERSION" $NEXT_MCE_VERSION
           echo "CHANNEL_MCE_VERSION" $CHANNEL_MCE_VERSION
 
+          if [[ "$NEXT_MCE_SNAPSHOT" == "null" ]]; then
+              echo "Could not find MCE version"
+              exit 1
+          fi
+
 
           function waitForInstallPlan() {
               version=$1
