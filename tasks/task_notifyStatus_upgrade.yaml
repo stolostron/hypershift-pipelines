@@ -42,7 +42,7 @@ spec:
           if [ $(params.runStatus) == "Succeeded" ]; then STATUS_EMOJI=:done-circle-check: ; fi
           if [ $(params.downstreamStatus) != "Succeeded" ]; then 
             STATUS_EMOJI=:heavy_multiplication_x:
-            STATUS="Not run, previous test failed"
+            STATUS="Cancelled upgrade test, downstream test failed"
           fi
 
           MESSAGE=":chart_with_upwards_trend: Daily ACM Hypershift Upgrade Test :chart_with_upwards_trend:\nACM Upgrade: \`$(inputs.params.downstream)\` :fast_forward: \`$(inputs.params.targetSnapshot)\` \nOCP Version: \`4.12.14\` \nStatus: $STATUS $STATUS_EMOJI\nPipeline Run: $PR_LINK"
