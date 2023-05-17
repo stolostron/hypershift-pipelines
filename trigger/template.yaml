@@ -14,10 +14,6 @@ spec:
       metadata:
         generateName: hs-ci-daily-build-
       spec:
-        timeouts:
-          pipeline: "2h0m0s"
-          tasks: "1h50m0s"
-          finally: "0h10m0s"
         serviceAccountName: pipeline
         pipelineRef:
           name: deploy-downstream-acm-and-hosted-cluster
@@ -36,6 +32,7 @@ spec:
             value: $(tt.params.upgradebuild)
           - name: sendNotification
             value: "true"
+        timeout: 2h30m0s
         workspaces:
           - name: shared-workspace
             persistentVolumeClaim:

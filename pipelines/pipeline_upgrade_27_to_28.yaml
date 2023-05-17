@@ -232,6 +232,7 @@ spec:
       taskRef:
         kind: Task
         name: destroy-hosted-cluster
+      timeout: 25m
       workspaces:
         - name: source
           workspace: shared-workspace
