@@ -32,7 +32,7 @@ spec:
             value: $(tt.params.upgradebuild)
           - name: sendNotification
             value: "true"
-        timeout: 1h30m0s
+        timeout: 2h30m0s
         workspaces:
           - name: shared-workspace
             persistentVolumeClaim:
