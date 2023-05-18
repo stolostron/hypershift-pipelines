@@ -33,6 +33,9 @@ spec:
           #!/bin/bash
           set -e
 
+          ERROR_STATUS_MESSAGE="Couldn't check out cluster"
+          echo $ERROR_STATUS_MESSAGE > failureStatus.yaml
+
           # Delete cluster claim if it exists
           echo "Deleting hub clusterclaim: $(inputs.params.clusterClaimName)"
           oc delete clusterclaim.hive  $(inputs.params.clusterClaimName) || true

@@ -22,6 +22,9 @@ spec:
           #!/bin/bash
           set -e
 
+          ERROR_STATUS_MESSAGE="Couldn't apply downstream prereqs"
+          echo $ERROR_STATUS_MESSAGE > failureStatus.yaml
+
           _LOGIN_CMD=$(cat login.sh)
           eval "$_LOGIN_CMD"
 

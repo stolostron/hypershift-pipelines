@@ -21,6 +21,9 @@ spec:
         - |-
           #!/bin/bash
 
+          ERROR_STATUS_MESSAGE="Failed to destroy hosted cluster"
+          echo $ERROR_STATUS_MESSAGE > failureStatus.yaml
+
           _LOGIN_CMD=$(cat login.sh)
           eval "$_LOGIN_CMD"
 
@@ -60,8 +63,8 @@ spec:
           KUBECTL_COMMAND="oc"
           # This value can be a different file path pinting to the hypershift CLI binary like "/my/dir/hypershift"
           HYPERSHIFT_COMMAND="hypershift"
-          
-          
+
+
           INFRA_OUTPUT_FILE_1=${HOSTED_CLUSTER_NAME}-infraout
           IAM_OUTPUT_FILE_1=${HOSTED_CLUSTER_NAME}-iam
 
@@ -75,6 +78,7 @@ spec:
                   echo "$(date) Destroying the AWS infrastructure and IAM"
                   ${HYPERSHIFT_COMMAND} destroy iam aws --region ${REGION} --aws-creds ${AWS_CREDS_FILE} --infra-id ${infraID}
                   ${HYPERSHIFT_COMMAND} destroy infra aws --region ${REGION} --aws-creds ${AWS_CREDS_FILE} --base-domain ${BASE_DOMAIN} --infra-id ${infraID}
+                  
                   #exit 1 Don't exit so we can continue cleaning up as much as we can
               fi
 
@@ -88,6 +92,7 @@ spec:
                   echo "$(date) Destroying the AWS infrastructure and IAM"
                   ${HYPERSHIFT_COMMAND} destroy iam aws --region ${REGION} --aws-creds ${AWS_CREDS_FILE} --infra-id ${infraID}
                   ${HYPERSHIFT_COMMAND} destroy infra aws --region ${REGION} --aws-creds ${AWS_CREDS_FILE} --base-domain ${BASE_DOMAIN} --infra-id ${infraID}
+                  
                   #exit 1 Don't exit so we can continue cleaning up as much as we can
               fi
 
@@ -97,6 +102,7 @@ spec:
                   echo "$(date) Destroying the AWS infrastructure and IAM"
                   ${HYPERSHIFT_COMMAND} destroy iam aws --region ${REGION} --aws-creds ${AWS_CREDS_FILE} --infra-id ${infraID}
                   ${HYPERSHIFT_COMMAND} destroy infra aws --region ${REGION} --aws-creds ${AWS_CREDS_FILE} --base-domain ${BASE_DOMAIN} --infra-id ${infraID}
+                  
                   #exit 1 Don't exit so we can continue cleaning up as much as we can
               fi
 
@@ -145,6 +151,7 @@ spec:
                       ${KUBECTL_COMMAND} get managedcluster ${resName} -o yaml
                       ${HYPERSHIFT_COMMAND} destroy iam aws --region ${REGION} --aws-creds ${AWS_CREDS_FILE} --infra-id ${INFRA_ID}
                       ${HYPERSHIFT_COMMAND} destroy infra aws --region ${REGION} --aws-creds ${AWS_CREDS_FILE} --base-domain $BASE_DOMAIN --infra-id ${INFRA_ID}
+                      
                       exit 1
                   fi
 
@@ -175,6 +182,7 @@ spec:
                       ${KUBECTL_COMMAND} get manifestwork ${resName} -n ${resNamespace} -o yaml
                       ${HYPERSHIFT_COMMAND} destroy iam aws --region ${REGION} --aws-creds ${AWS_CREDS_FILE} --infra-id ${INFRA_ID}
                       ${HYPERSHIFT_COMMAND} destroy infra aws --region ${REGION} --aws-creds ${AWS_CREDS_FILE} --base-domain $BASE_DOMAIN --infra-id ${INFRA_ID}
+                      
                       exit 1
                   fi
 
@@ -197,6 +205,7 @@ spec:
               do
                   if [ $SECONDS -gt 600 ]; then
                       echo "$(date) Timeout waiting for hypershift-cli-download to be available."
+                      
                       exit 1
                   fi
 
@@ -215,30 +224,35 @@ spec:
               echo "hypershiftTarGzURL $hypershiftTarGzURL"
               if [ -z "$hypershiftTarGzURL" ]; then
                       echo "$(date) failed to get Hypershift tar.gz ConsoleCLIDownload hypershift-cli-download"
+                  
                   exit 1
               fi
 
               curl -LOk ${hypershiftTarGzURL}
               if [ $? -ne 0 ]; then
                   echo "$(date) failed to download ${hypershiftTarGzURL}"
+                  
                   exit 1
               fi
 
               tar xvzf hypershift.tar.gz
               if [ $? -ne 0 ]; then
                   echo "$(date) failed to untar hypershift.tar.gz"
+                  
                   exit 1
               fi
 
               mv hypershift /bin
               if [ $? -ne 0 ]; then
                   echo "$(date) failed to mv extracted hypershift binary to /bin"
+                  
                   exit 1
               fi
 
               chmod +x /bin/hypershift
               if [ $? -ne 0 ]; then
                   echo "$(date) failed to chmod +x /bin/hypershift"
+                  
                   exit 1
               fi
           }

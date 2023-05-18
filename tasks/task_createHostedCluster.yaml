@@ -15,11 +15,14 @@ spec:
       description: Name of the hosted cluster
     - name: infraID
       description: infra id of the hosted cluster
-    
+
   steps:
     - args:
         - |-
           #!/bin/bash
+
+          ERROR_STATUS_MESSAGE="Failed to create hosted cluster"
+          echo $ERROR_STATUS_MESSAGE > failureStatus.yaml
 
           _LOGIN_CMD=$(cat login.sh)
           eval "$_LOGIN_CMD"
@@ -64,9 +67,9 @@ spec:
           KUBECTL_COMMAND="oc"
           # This value can be a different file path pinting to the hypershift CLI binary like "/my/dir/hypershift"
           HYPERSHIFT_COMMAND="hypershift"
-          
+
           oc create secret generic hypershift-operator-oidc-provider-s3-credentials --from-file=credentials=${AWS_CREDS_FILE} --from-literal=bucket=${S3_BUCKET_NAME} --from-literal=region=us-east-1 -n local-cluster || true
-          
+
           # Generate the hosted cluster name
           CLUSTER_NAME_1=${CLUSTER_NAME_PREFIX}$(cat /dev/urandom | env LC_ALL=C tr -dc 'a-z0-9' | fold -w 6 | head -n 1)
           INFRA_ID_1=$(cat /dev/urandom | env LC_ALL=C tr -dc 'a-z0-9' | fold -w 32 | head -n 1)
@@ -110,6 +113,7 @@ spec:
               ${HYPERSHIFT_COMMAND} create infra aws --aws-creds ${AWS_CREDS_FILE} --base-domain ${vars[BASE_DOMAIN]} --infra-id ${vars[INFRA_ID]} --name ${vars[CLUSTER_NAME]} --region ${vars[REGION]} --output-file ${infraOutfile}
               if [ $? -ne 0 ]; then
                   echo "failed to create infra"
+                  
                   exit 1
               fi
 
@@ -132,6 +136,7 @@ spec:
                   echo "$(date) Failed to create IAM"
                   echo "$(date) Destroying the AWS infrastructure"
                   ${HYPERSHIFT_COMMAND} destroy iam aws --region ${REGION} --aws-creds ${AWS_CREDS_FILE} --infra-id ${vars[INFRA_ID]}
+                  
                   exit 1
               fi
 
@@ -155,6 +160,7 @@ spec:
                   echo "$(date) Destroying the AWS infrastructure and IAM"
                   ${HYPERSHIFT_COMMAND} destroy iam aws --region ${REGION} --aws-creds ${AWS_CREDS_FILE} --infra-id ${vars[INFRA_ID]}
                   ${HYPERSHIFT_COMMAND} destroy infra aws --region ${REGION} --aws-creds ${AWS_CREDS_FILE} --base-domain $vars[BASE_DOMAIN] --infra-id ${vars[INFRA_ID]}
+                  
                   exit 1
               fi
 
@@ -166,6 +172,7 @@ spec:
                   echo "$(date) Destroying the AWS infrastructure and IAM"
                   ${HYPERSHIFT_COMMAND} destroy iam aws --region ${REGION} --aws-creds ${AWS_CREDS_FILE} --infra-id ${vars[INFRA_ID]}
                   ${HYPERSHIFT_COMMAND} destroy infra aws --region ${REGION} --aws-creds ${AWS_CREDS_FILE} --base-domain $vars[BASE_DOMAIN] --infra-id ${vars[INFRA_ID]}
+                  
                   exit 1
               fi
 
@@ -177,6 +184,7 @@ spec:
                   echo "$(date) Destroying the AWS infrastructure and IAM"
                   ${HYPERSHIFT_COMMAND} destroy iam aws --region ${REGION} --aws-creds ${AWS_CREDS_FILE} --infra-id ${vars[INFRA_ID]}
                   ${HYPERSHIFT_COMMAND} destroy infra aws --region ${REGION} --aws-creds ${AWS_CREDS_FILE} --base-domain $vars[BASE_DOMAIN] --infra-id ${vars[INFRA_ID]}
+                  
                   exit 1
               fi
 
@@ -190,6 +198,7 @@ spec:
                           echo "$(date) Destroying the AWS infrastructure and IAM"
                           ${HYPERSHIFT_COMMAND} destroy iam aws --region ${REGION} --aws-creds ${AWS_CREDS_FILE} --infra-id ${vars[INFRA_ID]}
                           ${HYPERSHIFT_COMMAND} destroy infra aws --region ${REGION} --aws-creds ${AWS_CREDS_FILE} --base-domain $vars[BASE_DOMAIN] --infra-id ${vars[INFRA_ID]}
+                          
                           exit 1
                       fi
 
@@ -199,6 +208,7 @@ spec:
                           echo "$(date) Destroying the AWS infrastructure and IAM"
                           ${HYPERSHIFT_COMMAND} destroy iam aws --region ${REGION} --aws-creds ${AWS_CREDS_FILE} --infra-id ${vars[INFRA_ID]}
                           ${HYPERSHIFT_COMMAND} destroy infra aws --region ${REGION} --aws-creds ${AWS_CREDS_FILE} --base-domain $vars[BASE_DOMAIN] --infra-id ${vars[INFRA_ID]}
+                          
                           exit 1
                       fi
 
@@ -208,6 +218,7 @@ spec:
                           echo "$(date) Destroying the AWS infrastructure and IAM"
                           ${HYPERSHIFT_COMMAND} destroy iam aws --region ${REGION} --aws-creds ${AWS_CREDS_FILE} --infra-id ${vars[INFRA_ID]}
                           ${HYPERSHIFT_COMMAND} destroy infra aws --region ${REGION} --aws-creds ${AWS_CREDS_FILE} --base-domain $vars[BASE_DOMAIN] --infra-id ${vars[INFRA_ID]}
+                          
                           exit 1
                       fi
                   done
@@ -219,6 +230,7 @@ spec:
                   echo "$(date) Destroying the AWS infrastructure and IAM"
                   ${HYPERSHIFT_COMMAND} destroy iam aws --region ${REGION} --aws-creds ${AWS_CREDS_FILE} --infra-id ${vars[INFRA_ID]}
                   ${HYPERSHIFT_COMMAND} destroy infra aws --region ${REGION} --aws-creds ${AWS_CREDS_FILE} --base-domain $vars[BASE_DOMAIN] --infra-id ${vars[INFRA_ID]}
+                  
                   exit 1
               fi
 
@@ -228,6 +240,7 @@ spec:
                   echo "$(date) Destroying the AWS infrastructure and IAM"
                   ${HYPERSHIFT_COMMAND} destroy iam aws --region ${REGION} --aws-creds ${AWS_CREDS_FILE} --infra-id ${vars[INFRA_ID]}
                   ${HYPERSHIFT_COMMAND} destroy infra aws --region ${REGION} --aws-creds ${AWS_CREDS_FILE} --base-domain $vars[BASE_DOMAIN] --infra-id ${vars[INFRA_ID]}
+                  
                   exit 1
               fi
 
@@ -237,6 +250,7 @@ spec:
                   echo "$(date) Destroying the AWS infrastructure and IAM"
                   ${HYPERSHIFT_COMMAND} destroy iam aws --region ${REGION} --aws-creds ${AWS_CREDS_FILE} --infra-id ${vars[INFRA_ID]}
                   ${HYPERSHIFT_COMMAND} destroy infra aws --region ${REGION} --aws-creds ${AWS_CREDS_FILE} --base-domain $vars[BASE_DOMAIN] --infra-id ${vars[INFRA_ID]}
+                  
                   exit 1
               fi
           }
@@ -258,6 +272,7 @@ spec:
                       echo "$(date) Destroying the AWS infrastructure and IAM"
                       ${HYPERSHIFT_COMMAND} destroy iam aws --region ${REGION} --aws-creds ${AWS_CREDS_FILE} --infra-id ${infraId}
                       ${HYPERSHIFT_COMMAND} destroy infra aws --region ${REGION} --aws-creds ${AWS_CREDS_FILE} --base-domain ${BASE_DOMAIN} --infra-id ${infraId}
+                      
                       exit 1
                   fi
 
@@ -330,6 +345,7 @@ spec:
                       ${KUBECTL_COMMAND} get managedcluster ${resName} -o yaml
                       ${HYPERSHIFT_COMMAND} destroy iam aws --region ${REGION} --aws-creds ${AWS_CREDS_FILE} --infra-id ${vars[INFRA_ID]}
                       ${HYPERSHIFT_COMMAND} destroy infra aws --region ${REGION} --aws-creds ${AWS_CREDS_FILE} --base-domain $vars[BASE_DOMAIN] --infra-id ${vars[INFRA_ID]}
+                      
                       exit 1
                   fi
 
@@ -363,6 +379,7 @@ spec:
                       echo "Timeout waiting for hypershift-addon to be available."
                       echo "List of current pods:"
                       ${KUBECTL_COMMAND} get managedclusteraddon hypershift-addon -n local-cluster -o yaml
+                      
                       exit 1
                   fi
 
@@ -384,6 +401,7 @@ spec:
               do
                   if [ $SECONDS -gt 600 ]; then
                       echo "$(date) Timeout waiting for hypershift-cli-download to be available."
+                      
                       exit 1
                   fi
 
@@ -402,30 +420,35 @@ spec:
               echo "hypershiftTarGzURL $hypershiftTarGzURL"
               if [ -z "$hypershiftTarGzURL" ]; then
                       echo "$(date) failed to get Hypershift tar.gz ConsoleCLIDownload hypershift-cli-download"
+                  
                   exit 1
               fi
 
               curl -LOk ${hypershiftTarGzURL}
               if [ $? -ne 0 ]; then
                   echo "$(date) failed to download ${hypershiftTarGzURL}"
+                  
                   exit 1
               fi
 
               tar xvzf hypershift.tar.gz
               if [ $? -ne 0 ]; then
                   echo "$(date) failed to untar hypershift.tar.gz"
+                  
                   exit 1
               fi
 
               mv hypershift /bin
               if [ $? -ne 0 ]; then
                   echo "$(date) failed to mv extracted hypershift binary to /bin"
+                  
                   exit 1
               fi
 
               chmod +x /bin/hypershift
               if [ $? -ne 0 ]; then
                   echo "$(date) failed to chmod +x /bin/hypershift"
+                  
                   exit 1
               fi
           }
@@ -434,12 +457,14 @@ spec:
               ${KUBECTL_COMMAND} apply -f resources/addonconfig.yaml
               if [ $? -ne 0 ]; then
                   echo "$(date) failed to apply resources/addonconfig.yaml"
+                  
                   exit 1
               fi
 
               ${KUBECTL_COMMAND} patch clustermanagementaddon work-manager --type merge -p '{"spec":{"supportedConfigs":[{"defaultConfig":{"name":"addon-hosted-config","namespace":"multicluster-engine"},"group":"addon.open-cluster-management.io","resource":"addondeploymentconfigs"}]}}'
               if [ $? -ne 0 ]; then
                   echo "$(date) failed to patch clustermanagementaddon work-manager"
+                  
                   exit 1
               fi
 
