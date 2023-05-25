@@ -24,7 +24,7 @@ spec:
 
           ERROR_STATUS_MESSAGE="Could not apply ACM subscription"
           echo $ERROR_STATUS_MESSAGE > failureStatus.yaml 
-
+          {
           _LOGIN_CMD=$(cat login.sh)
           eval "$_LOGIN_CMD"
 
@@ -89,7 +89,7 @@ spec:
                   exit 1
               fi
           done
-
+          } 2>&1 | tee task_logs/$(context.task.name).log
       command:
         - /bin/bash
         - -c

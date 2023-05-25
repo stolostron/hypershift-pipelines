@@ -20,7 +20,7 @@ spec:
         - |-
           #!/bin/bash
           set -e
-
+          {
           ERROR_STATUS_MESSAGE="Hosted cluster was not migrated"
           echo $ERROR_STATUS_MESSAGE > failureStatus.yaml
 
@@ -44,6 +44,7 @@ spec:
           echo "Hosted cluster $(inputs.params.hostedClusterName) is running"
 
           exit 0
+          } 2>&1 | tee task_logs/$(context.task.name).log
       command:
         - /bin/bash
         - -c

@@ -1,0 +1,16 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: task-log-pod
+spec:
+  containers:
+    - name: search-container
+      image: busybox
+      command: ["/bin/sh", "-c", "tail -f /dev/null"]
+      volumeMounts:
+        - name: data
+          mountPath: /data
+  volumes:
+    - name: data
+      persistentVolumeClaim:
+        claimName: hs-ds-ws-claim

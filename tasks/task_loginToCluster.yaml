@@ -21,7 +21,7 @@ spec:
         - |-
           #!/bin/bash
           set -e
-
+          {
           ERROR_STATUS_MESSAGE="Failed to log into cluster"
           echo $ERROR_STATUS_MESSAGE > failureStatus.yaml
 
@@ -30,7 +30,7 @@ spec:
 
           echo $LOGINCMD > login.sh
           echo $LOGINCMD
-
+          } 2>&1 | tee task_logs/$(context.task.name).log
       command:
         - /bin/bash
         - -c

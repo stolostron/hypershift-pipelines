@@ -25,7 +25,7 @@ spec:
         - |-
           #!/bin/bash
           set -e
-
+          {
           REASON=$(cat failureStatus.yaml)
 
           PR_LINK=https://console-openshift-console.apps.collective.aws.red-chesterfield.com/k8s/ns/hypershift-devel/tekton.dev~v1beta1~PipelineRun/$(inputs.params.pipelineRunID)
@@ -53,6 +53,7 @@ spec:
           fi
 
           exit 0
+          } 2>&1 | tee task_logs/$(context.task.name).log
 
       command:
         - /bin/bash

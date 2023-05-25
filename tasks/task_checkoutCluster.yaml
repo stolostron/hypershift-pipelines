@@ -32,7 +32,7 @@ spec:
         - |-
           #!/bin/bash
           set -e
-
+          {
           ERROR_STATUS_MESSAGE="Couldn't check out cluster"
           echo $ERROR_STATUS_MESSAGE > failureStatus.yaml
 
@@ -102,6 +102,7 @@ spec:
           echo ""
           echo "Clusterclaim successfully checked out"
           exit 0
+          } 2>&1 | tee task_logs/$(context.task.name).log
       command:
         - /bin/bash
         - -c

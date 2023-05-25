@@ -21,7 +21,7 @@ spec:
         - |-
           #!/bin/bash
           set -e
-
+          {
           ERROR_STATUS_MESSAGE="Couldn't apply downstream prereqs"
           echo $ERROR_STATUS_MESSAGE > failureStatus.yaml
 
@@ -86,6 +86,7 @@ spec:
 
           oc apply -f samples/resources/clusterautoscaler.yaml
           oc apply -f samples/resources/machineautoscaler.yaml
+          } 2>&1 | tee task_logs/$(context.task.name).log
       command:
         - /bin/bash
         - -c
