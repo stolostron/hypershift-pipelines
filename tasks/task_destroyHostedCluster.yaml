@@ -23,7 +23,7 @@ spec:
 
           ERROR_STATUS_MESSAGE="Failed to destroy hosted cluster"
           echo $ERROR_STATUS_MESSAGE > failureStatus.yaml
-
+          {
           _LOGIN_CMD=$(cat login.sh)
           eval "$_LOGIN_CMD"
 
@@ -272,6 +272,7 @@ spec:
           cleaup ${HOSTED_CLUSTER_NAME} ${INFRA_ID} ${INFRA_OUTPUT_FILE_1} ${IAM_OUTPUT_FILE_1}
 
           exit 0
+          } 2>&1 | tee task_logs/$(context.task.name).log
       command:
         - /bin/bash
         - -c

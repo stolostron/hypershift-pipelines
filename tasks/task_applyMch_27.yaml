@@ -13,7 +13,7 @@ spec:
         - |-
           #!/bin/bash
           set -e
-
+          {
           ERROR_STATUS_MESSAGE="Failed to install the MCH in allotted time"
           echo $ERROR_STATUS_MESSAGE > failureStatus.yaml
 
@@ -38,6 +38,7 @@ spec:
 
           echo "MultiClusterHub is running"
           exit 0
+          } 2>&1 | tee task_logs/$(context.task.name).log
       command:
         - /bin/bash
         - -c

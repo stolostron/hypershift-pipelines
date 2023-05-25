@@ -23,7 +23,7 @@ spec:
 
           ERROR_STATUS_MESSAGE="Failed to create hosted cluster"
           echo $ERROR_STATUS_MESSAGE > failureStatus.yaml
-
+          {
           _LOGIN_CMD=$(cat login.sh)
           eval "$_LOGIN_CMD"
 
@@ -519,6 +519,7 @@ spec:
           echo "-----------------HOSTED CLUSTER CREATION SUCCESSFUL-----------------"
 
           exit 0
+          } 2>&1 | tee task_logs/$(context.task.name).log
       command:
         - /bin/bash
         - -c

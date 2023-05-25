@@ -21,7 +21,7 @@ spec:
         - |-
           #!/bin/bash
           set -e
-
+          {
           ERROR_STATUS_MESSAGE="Invalid pipeline parameters"
           echo $ERROR_STATUS_MESSAGE > failureStatus.yaml
 
@@ -61,6 +61,7 @@ spec:
           fi
 
           echo "Params are valid"
+          } 2>&1 | tee task_logs/$(context.task.name).log
       command:
         - /bin/bash
         - -c
