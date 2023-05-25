@@ -1,4 +1,4 @@
-name: Trigger Pipeline Run on new tag
+name: trigger pipeline run every weekday
 
 on:
   workflow_dispatch:
@@ -8,7 +8,7 @@ on:
 
 jobs:
   fetch:
-    name: Fetch and Push Image Tag
+    name: fetch and push name and tags
     env:
       EVENT_LISTENER_ROUTE: ${{ secrets.EVENT_LISTENER_ROUTE }}
     runs-on: ubuntu-latest
