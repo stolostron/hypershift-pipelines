@@ -34,16 +34,17 @@ jobs:
             else
               echo "tag28 is empty, trying again"
             fi
-
-            #suffix=$(cat /dev/urandom | env LC_ALL=C tr -dc 'a-z0-9' | fold -w 10 | head -n 1)
-            CLUSTER_CLAIM_NAME=hypershift-ci-cluster-
-            echo "CLUSTER_CLAIM_NAME=$CLUSTER_CLAIM_NAME" >> $GITHUB_ENV
           done
-      - name: echo tag
+      - name: generate clusterclaim name
+        run: |
+            suffix=$(cat /dev/urandom | env LC_ALL=C tr -dc 'a-z0-9' | fold -w 10 | head -n 1)
+            cluster_claim_name=hypershift-ci-cluster-$suffix
+            echo "cluster_claim_name=$cluster_claim_name" >> $GITHUB_ENV
+      - name: echo tags and name
         run: |
           echo "Using tags" ${{ env.tag27 }} "and" ${{ env.tag28 }} 
-          echo "Clusterclaim name is" $CLUSTER_CLAIM_NAME
-      - name: Push Tag
+          echo "Clusterclaim name is" $${{ env.cluster_claim_name }}
+      - name: push tags and name
         run: >-
-          curl -v -H 'content-Type: application/json' -d '{"message": {"clusterClaimName": "${{env.CLUSTER_CLAIM_NAME}}", "tag27": "${{env.tag27}}", "tag28": "${{env.tag28}}"} }' $EVENT_LISTENER_ROUTE
+          curl -v -H 'content-Type: application/json' -d '{"message": {"clusterClaimName": "${{env.cluster_claim_name}}", "tag27": "${{env.tag27}}", "tag28": "${{env.tag28}}"} }' $EVENT_LISTENER_ROUTE
         
