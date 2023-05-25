@@ -37,8 +37,19 @@ spec:
           echo $ERROR_STATUS_MESSAGE > failureStatus.yaml
 
           # Delete cluster claim if it exists
-          echo "Deleting hub clusterclaim: $(inputs.params.clusterClaimName)"
-          oc delete clusterclaim.hive  $(inputs.params.clusterClaimName) || true
+          # echo "Deleting hub clusterclaim: $(inputs.params.clusterClaimName)"
+          # oc delete clusterclaim.hive  $(inputs.params.clusterClaimName) || true
+
+          echo "Deleting all clusterclaims" 
+          array=($(oc get clusterclaim.hive -o jsonpath='{range .items[*]}{.metadata.name}{"\n"}{end}'))
+          declare -p array
+          for clusterclaim in "${array[@]}"
+          do
+              echo "Deleting" $clusterclaim
+              oc delete clusterclaim.hive $clusterclaim & 
+              sleep 5
+              kill $!
+          done
 
           _TEMPLATE="apiVersion: hive.openshift.io/v1
           kind: ClusterClaim

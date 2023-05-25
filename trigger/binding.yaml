@@ -8,3 +8,5 @@ spec:
       value: $(body.message.tag27)
     - name: upgradebuild
       value: $(body.message.tag28)
+    - name: clusterClaimName
+      value: $(body.message.clusterClaimName)
