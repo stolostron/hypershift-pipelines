@@ -26,13 +26,22 @@ spec:
           #!/bin/bash
           set -e
 
+          REASON=$(cat failureStatus.yaml)
+
           PR_LINK=https://console-openshift-console.apps.collective.aws.red-chesterfield.com/k8s/ns/hypershift-devel/tekton.dev~v1beta1~PipelineRun/$(inputs.params.pipelineRunID)
 
           STATUS_EMOJI=:failed:
 
-          if [ $(inputs.params.downstreamStatus) == "Succeeded" ]; then STATUS_EMOJI=:done-circle-check: ; fi
+          if [ $(inputs.params.downstreamStatus) == "Succeeded" ]; 
+          then 
+            STATUS_EMOJI=:done-circle-check: ; 
+            STATUS_MESSAGE="Succeeded"
+          else
+            STATUS_MESSAGE=$(echo "Failed:" $REASON) 
+          fi
 
-          MESSAGE=":downstream: Daily ACM Hypershift Downstream Test :downstream:\nACM Build: \`$(inputs.params.downstream)\` \nOCP Version: \`4.12.14\` \nStatus: $(inputs.params.downstreamStatus) $STATUS_EMOJI \nPipeline Run: $PR_LINK"
+
+          MESSAGE=":downstream: Daily ACM Hypershift Downstream Test :downstream:\nACM Build: \`$(inputs.params.downstream)\` \nOCP Version: \`4.12.14\` \nStatus: $STATUS_MESSAGE $STATUS_EMOJI \nPipeline Run: $PR_LINK"
 
           if [[ "$(inputs.params.sendNotification)" == "true" ]]; then
             echo "Send notification to acm-hypershift-notifications slack channel"

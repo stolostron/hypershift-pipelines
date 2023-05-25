@@ -22,6 +22,9 @@ spec:
           #!/bin/bash
           set -e
 
+          ERROR_STATUS_MESSAGE="Invalid pipeline parameters"
+          echo $ERROR_STATUS_MESSAGE > failureStatus.yaml
+
           # Validate Clusterpool exists
           # Validate clusterClaimLifetime ends in 'h'
           # Validates imagePullSecretExists
@@ -34,6 +37,7 @@ spec:
             echo "Clusterpool exists"
           else
             echo "Unable to locate clusterpool: $(inputs.params.clusterPoolName)"
+            
             exit 1
           fi
 
@@ -42,6 +46,7 @@ spec:
             echo "ClusterClaimLifetime is valid"
           else
             echo "clusterClaimLifetime must end in 'h'"
+            
             exit 1
           fi
 
@@ -51,6 +56,7 @@ spec:
             echo "Valid image parameter: $_SNAPSHOT"
           else
             echo "Not a valid image: $_SNAPSHOT"
+            
             exit 1
           fi
 

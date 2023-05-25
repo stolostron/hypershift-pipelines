@@ -4,42 +4,46 @@ metadata:
   name: deploy-acm-hyper-apply-mch-27
 spec:
   params:
-  - name: namespace
-    default: open-cluster-management
-    description: The namespace to deploy MCE into
-    type: string
+    - name: namespace
+      default: open-cluster-management
+      description: The namespace to deploy MCE into
+      type: string
   steps:
-  - args:
-    - |-
-      #!/bin/bash
-      set -e
+    - args:
+        - |-
+          #!/bin/bash
+          set -e
 
-      _LOGIN_CMD=$(cat login.sh)
-      eval "$_LOGIN_CMD"
-      oc project $(inputs.params.namespace)
+          ERROR_STATUS_MESSAGE="Failed to install the MCH in allotted time"
+          echo $ERROR_STATUS_MESSAGE > failureStatus.yaml
 
-      oc apply -f samples/resources/multiclusterhub_27.yaml
+          _LOGIN_CMD=$(cat login.sh)
+          eval "$_LOGIN_CMD"
+          oc project $(inputs.params.namespace)
 
-      _ATTEMPTS=0
-      until oc get mch multiclusterhub -o jsonpath={'.status.phase'} | grep "Running";
-      do 
-          echo "Waiting for MCH to enter a Running state..."
-          _ATTEMPTS=$((_ATTEMPTS + 1))
-          sleep 15;
-          if [[ $_ATTEMPTS == 30 ]]; then
-              echo "Failed to install the MCH in allotted time"
-              exit 1
-          fi
-      done
+          oc apply -f samples/resources/multiclusterhub_27.yaml
 
-      echo "MultiClusterHub is running"
-      exit 0
-    command:
-    - /bin/bash
-    - -c
-    image: quay.io/zkayyali812/ocm-utils:latest
-    name: apply
-    resources: {}
-    workingDir: /workspace/source
+          _ATTEMPTS=0
+          until oc get mch multiclusterhub -o jsonpath={'.status.phase'} | grep "Running";
+          do 
+              echo "Waiting for MCH to enter a Running state..."
+              _ATTEMPTS=$((_ATTEMPTS + 1))
+              sleep 15;
+              if [[ $_ATTEMPTS == 30 ]]; then
+                  echo "Failed to install the MCH in allotted time"
+                  
+                  exit 1
+              fi
+          done
+
+          echo "MultiClusterHub is running"
+          exit 0
+      command:
+        - /bin/bash
+        - -c
+      image: quay.io/zkayyali812/ocm-utils:latest
+      name: apply
+      resources: {}
+      workingDir: /workspace/source
   workspaces:
-  - name: source
+    - name: source

@@ -22,6 +22,9 @@ spec:
           #!/bin/bash
           set -e
 
+          ERROR_STATUS_MESSAGE="Could not apply ACM subscription"
+          echo $ERROR_STATUS_MESSAGE > failureStatus.yaml 
+
           _LOGIN_CMD=$(cat login.sh)
           eval "$_LOGIN_CMD"
 
@@ -67,6 +70,7 @@ spec:
               sleep 10;
               if [[ $_ATTEMPTS == 5 ]]; then
                   echo "Failed to find the CSV in allotted time"
+                  
                   exit 1
               fi
           done
@@ -81,6 +85,7 @@ spec:
               sleep 15;
               if [[ $_ATTEMPTS == 10 ]]; then
                   echo "The CSV failed to install in the allotted time"
+                  
                   exit 1
               fi
           done

@@ -34,18 +34,27 @@ spec:
           #!/bin/bash
           set -e
 
+          REASON=$(cat failureStatus.yaml)
+
           PR_LINK=https://console-openshift-console.apps.collective.aws.red-chesterfield.com/k8s/ns/hypershift-devel/tekton.dev~v1beta1~PipelineRun/$(inputs.params.pipelineRunID)
 
           STATUS_EMOJI=:failed:
-          STATUS=$(inputs.params.runStatus)
+          STATUS_MESSAGE=$(inputs.params.runStatus)
 
-          if [ $(params.runStatus) == "Succeeded" ]; then STATUS_EMOJI=:done-circle-check: ; fi
-          if [ $(params.downstreamStatus) != "Succeeded" ]; then 
-            STATUS_EMOJI=:heavy_multiplication_x:
-            STATUS="Cancelled upgrade test, downstream test failed"
+          if [ $(params.runStatus) == "Succeeded" ]; 
+          then 
+            STATUS_EMOJI=:done-circle-check:  
+            STATUS_MESSAGE=$(inputs.params.runStatus)
+          else
+            STATUS_MESSAGE=$(echo "Failed:" $REASON)
           fi
 
-          MESSAGE=":chart_with_upwards_trend: Daily ACM Hypershift Upgrade Test :chart_with_upwards_trend:\nACM Upgrade: \`$(inputs.params.downstream)\` :fast_forward: \`$(inputs.params.targetSnapshot)\` \nOCP Version: \`4.12.14\` \nStatus: $STATUS $STATUS_EMOJI\nPipeline Run: $PR_LINK"
+          if [ $(params.downstreamStatus) != "Succeeded" ]; then 
+            STATUS_EMOJI=:heavy_multiplication_x:
+            STATUS_MESSAGE=$(echo "Cancelled upgrade test, downstream test failed:" $REASON)
+          fi
+
+          MESSAGE=":chart_with_upwards_trend: Daily ACM Hypershift Upgrade Test :chart_with_upwards_trend:\nACM Upgrade: \`$(inputs.params.downstream)\` :fast_forward: \`$(inputs.params.targetSnapshot)\` \nOCP Version: \`4.12.14\` \nStatus: $STATUS_MESSAGE $STATUS_EMOJI\nPipeline Run: $PR_LINK"
 
           if [[ "$(inputs.params.sendNotification)" == "true" ]]; then
             echo "Send notification to acm-hypershift-notifications slack channel"

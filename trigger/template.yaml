@@ -8,6 +8,8 @@ spec:
       description: ACM build
     - name: upgradebuild
       description: ACM build to upgrade to
+    - name: clusterClaimName
+      description: name of the clusterclaim
   resourcetemplates:
     - apiVersion: tekton.dev/v1beta1
       kind: PipelineRun
@@ -21,7 +23,7 @@ spec:
           - name: clusterPoolName
             value: hypershift-ci-pool
           - name: clusterClaimName
-            value: hypershift-ci-cluster
+            value: $(tt.params.clusterClaimName) #old clusterclaims not deleting even though infra is gone, hack fix
           - name: clusterClaimLifetime
             value: 12h
           - name: namespace
