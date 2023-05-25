@@ -39,6 +39,18 @@ oc apply -f ./resources/slack_webhook.yaml -n <NAMESPACE>
 
 ## How to trigger a pipeline run
 
+## Disappearing Logs
+Generally logs can be viewed in the Logs tab under a pipeline run. However for some reason some logs disappear, regardless of taskrun success/failure. The most recent logs are also saved in the same pvc used by tasks under `./task_logs/<task-name>` To view the logs in case they disappear from the UI, deploy the pod defined [here](https://github.com/stolostron/hypershift-pipelines/blob/main/resources/task-log-pod.yaml). Once it's running, run:
+```
+$ kubectl exec -it task-log-pod -- /bin/sh
+/ # cd data/task_logs
+```
+Once you're done viewing the logs, make sure to delete the pod or subsequent pipeline runs may hang.
+```
+/ # exit
+$ kubectl delete pods task-log-pod
+```
+
 ## Cleanup
 
 todo
