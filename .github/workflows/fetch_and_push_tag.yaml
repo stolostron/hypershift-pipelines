@@ -13,6 +13,7 @@ jobs:
       EVENT_LISTENER_ROUTE: ${{ secrets.EVENT_LISTENER_ROUTE }}
     runs-on: ubuntu-latest
     steps:
+      - uses: actions/checkout@v3
       - name: Fetch Tag
         # Get the latest 2.7.x DOWNSTREAM tag
         run: |
@@ -46,4 +47,4 @@ jobs:
       - name: push tags and name
         run: >-
           curl -v -H 'content-Type: application/json' -d '{"message": {"clusterClaimName": "${{env.cluster_claim_name}}", "tag27": "${{env.tag27}}", "tag28": "${{env.tag28}}"} }' $EVENT_LISTENER_ROUTE
-        
+      - uses: gautamkrishnar/keepalive-workflow@v1
